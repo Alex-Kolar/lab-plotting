@@ -118,20 +118,20 @@ plt.show()
 plt.close()
 
 
-# do some fitting
-wave_diff = np.abs(wavelengths - WAVELENGTH_TO_FIT)
-wave_idx = wave_diff.argmin()
-print(f"Closest wavelength: {wavelengths[wave_idx]}")
-
-# coincidence_individual = coincidences[wave_idx]
-# model = Model(gauss_fit)
-# res = model.fit(coincidence_individual, x=servo_pos)
-# res.fit_report()
-
-plt.plot(servo_pos, coincidences[wave_idx],
-         'o', label="Coincidence Counts")
-plt.plot(servo_pos, noise[wave_idx],
-         'o', label="False Counts")
-plt.title(f"{WAVELENGTH_TO_FIT} nm")
-plt.legend(shadow=True)
-plt.show()
+# # do some fitting
+# wave_diff = np.abs(wavelengths - WAVELENGTH_TO_FIT)
+# wave_idx = wave_diff.argmin()
+# print(f"Closest wavelength: {wavelengths[wave_idx]}")
+#
+# # coincidence_individual = coincidences[wave_idx]
+# # model = Model(gauss_fit)
+# # res = model.fit(coincidence_individual, x=servo_pos)
+# # res.fit_report()
+#
+# plt.plot(servo_pos, coincidences[wave_idx],
+#          'o', label="Coincidence Counts")
+# plt.plot(servo_pos, noise[wave_idx],
+#          'o', label="False Counts")
+# plt.title(f"{WAVELENGTH_TO_FIT} nm")
+# plt.legend(shadow=True)
+# plt.show()
