@@ -34,15 +34,24 @@ SINGLE_1 = 'raw counts 7'
 SINGLE_2 = 'raw counts 8'
 
 # plotting parameters
-_, tail = os.path.split(data_filename)
-output_filename = os.path.splitext(tail)[0]
-output_filename_norm = output_filename + '_norm'
-output = os.path.join('output_figs', output_filename + '.png')
-output_norm = os.path.join('output_figs', output_filename_norm + '.png')
 mpl.rcParams.update({'font.sans-serif': 'Helvetica',
                      'font.size': 12})
 x_range = (42, 47)  # unit: ps
 y_range = (0, 1600)
+
+# output filenames
+OUTPUT_DIR = 'output_figs'
+FILENAME_COINCIDENCE = 'coincidences.png'
+FILENAME_SINGLES = 'singles.png'
+
+_, tail = os.path.split(data_filename)
+output_subdir = os.path.splitext(tail)[0]
+output_dir = os.path.join(OUTPUT_DIR, output_subdir)
+try:
+    os.makedirs(output_dir)
+    print(f'Created directory {output_dir}')
+except FileExistsError:
+    pass
 
 # wavelength to analyze and fit
 WAVELENGTH_TO_FIT = 1535.5  # unit: nm
@@ -85,7 +94,7 @@ plt.xlabel("Servo Position (mm)")
 plt.ylabel("Wavelength (nm)")
 
 plt.tight_layout()
-plt.savefig(output)
+plt.savefig(os.path.join(output_dir, FILENAME_COINCIDENCE))
 print("Finished generating 2D plot.")
 plt.close()
 
@@ -106,22 +115,6 @@ plt.ylabel("Wavelength (nm)")
 
 plt.tight_layout()
 plt.show()
-plt.close()
-
-
-# normalize
-max_counts = np.max(coincidences_adj, axis=1)
-coincidences_adj /= max_counts[:,None]
-
-# plotting
-plt.pcolormesh(X, Y, coincidences_adj, cmap='magma')
-plt.colorbar(label="Normalized Coincidence Counts")
-plt.xlabel("Servo Position (mm)")
-plt.ylabel("Wavelength (nm)")
-
-plt.tight_layout()
-plt.savefig(output_norm)
-print("Finished generating normalized 2D plot.")
 plt.close()
 
 
