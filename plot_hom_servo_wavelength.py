@@ -36,7 +36,7 @@ SINGLE_2 = 'raw counts 8'
 # plotting parameters
 mpl.rcParams.update({'font.sans-serif': 'Helvetica',
                      'font.size': 12})
-kw = {'height_ratios': [3, 10],
+kw = {'height_ratios': [10, 3],
       'width_ratios': [3, 10]}
 figsize = (10, 8)
 x_range = (42, 47)  # unit: ps
@@ -95,30 +95,30 @@ coincidences_wavelength = np.sum(coincidences_adj, axis=1)
 
 # plotting
 fig, ax = plt.subplots(2, 2, gridspec_kw=kw, figsize=figsize)
-ax[0][1].sharex(ax[1][1])
-ax[1][0].sharey(ax[1][1])
-fig.delaxes(ax[0][0])
+ax[1][1].sharex(ax[0][1])
+ax[0][0].sharey(ax[0][1])
+fig.delaxes(ax[1][0])
 
 X, Y = np.meshgrid(servo_pos, wavelengths)
-pcm = ax[1][1].pcolormesh(X, Y, coincidences_adj, cmap='magma')
-cb = fig.colorbar(pcm, ax=ax[1][1], label="Coincidence Counts")
-ax[0][1].plot(servo_pos, coincidences_servo)
-ax[1][0].plot(coincidences_wavelength, wavelengths)
+pcm = ax[0][1].pcolormesh(X, Y, coincidences_adj, cmap='magma')
+cb = fig.colorbar(pcm, ax=ax[0][1], label="Coincidence Counts")
+ax[1][1].plot(servo_pos, coincidences_servo)
+ax[0][0].plot(coincidences_wavelength, wavelengths)
 
-ax[1][1].tick_params(labelleft=False)
+# ax[1][1].tick_params(labelleft=False)
 ax[0][1].tick_params(labelbottom=False,
                      labelleft=False)
-ax[1][0].tick_params(labelbottom=False)
+# ax[1][0].tick_params(labelbottom=False)
 ax[1][1].set_xlabel("Servo Position (mm)")
-ax[1][0].set_ylabel("Wavelength (nm)")
+ax[0][0].set_ylabel("Wavelength (nm)")
 
 fig.tight_layout()
 
 # do axis adjusting
-pos = ax[1][1].get_position()
-pos_upper = ax[0][1].get_position()
-new = [pos_upper.x0, pos_upper.y0, pos.width, pos_upper.height]
-ax[0][1].set_position(new)
+pos = ax[0][1].get_position()
+pos_lower = ax[1][1].get_position()
+new = [pos_lower.x0, pos_lower.y0, pos.width, pos_lower.height]
+ax[1][1].set_position(new)
 
 fig.savefig(os.path.join(output_dir, FILENAME_COINCIDENCE))
 print("Finished generating 2D plot.")
