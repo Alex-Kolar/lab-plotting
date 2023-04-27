@@ -117,14 +117,8 @@ fig.tight_layout()
 # do axis adjusting
 pos = ax[1][1].get_position()
 pos_upper = ax[0][1].get_position()
-print(pos)
-print(pos_upper)
-delta = pos_upper.width - pos.width
-# new = [pos.x0, pos.y0, pos_upper.width, pos.height]
-# ax.set_position(new)
-# pos_c = cb.ax.get_position()
-# new = [pos_c.x0 + delta, pos_c.y0, pos_c.width, pos_c.height]
-# cb.ax.set_position(new)
+new = [pos_upper.x0, pos_upper.y0, pos.width, pos_upper.height]
+ax[0][1].set_position(new)
 
 fig.savefig(os.path.join(output_dir, FILENAME_COINCIDENCE))
 print("Finished generating 2D plot.")
