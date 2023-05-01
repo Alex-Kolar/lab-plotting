@@ -82,38 +82,25 @@ noise_series = df[NOISE]
 noise = np.resize(noise_series, (len(wavelengths), num_per_wl))
 coincidences_adj = coincidences - noise
 
-# do integration
-coincidences_servo = np.sum(coincidences_adj, axis=0)
-coincidences_wavelength = np.sum(coincidences_adj, axis=1)
+
+# do transform
+given_time = coincidences_adj[:,0]
+plt.plot(freqs, given_time)
+plt.show()
+plt.close()
 
 
 # plotting
-fig, ax = plt.subplots(2, 2, gridspec_kw=kw, figsize=figsize)
-ax[1][1].sharex(ax[0][1])
-ax[0][0].sharey(ax[0][1])
-fig.delaxes(ax[1][0])
+fig, ax = plt.subplots(figsize=figsize)
 
 X, Y = np.meshgrid(servo_pos, freqs)
-pcm = ax[0][1].pcolormesh(X, Y, coincidences_adj, cmap='magma')
-cb = fig.colorbar(pcm, ax=ax[0][1], label="Coincidence Counts")
-ax[1][1].plot(servo_pos, coincidences_servo)
-ax[0][0].plot(coincidences_wavelength, freqs)
+pcm = ax.pcolormesh(X, Y, coincidences_adj, cmap='magma')
+cb = fig.colorbar(pcm, ax=ax, label="Coincidence Counts")
 
-# ax[1][1].tick_params(labelleft=False)
-ax[0][1].tick_params(labelbottom=False,
-                     labelleft=False)
-# ax[1][0].tick_params(labelbottom=False)
-ax[1][1].set_xlabel("Servo Position (mm)")
-ax[0][0].set_ylabel("Frequency (Hz)")
+ax.set_xlabel("Servo Position (mm)")
+ax.set_ylabel("Frequency (Hz)")
 
 fig.tight_layout()
-
-# do axis adjusting
-pos = ax[0][1].get_position()
-pos_lower = ax[1][1].get_position()
-new = [pos_lower.x0, pos_lower.y0, pos.width, pos_lower.height]
-ax[1][1].set_position(new)
-
 fig.savefig(os.path.join(output_dir, FILENAME_COINCIDENCE))
 print("Finished generating 2D plot.")
 plt.close()
