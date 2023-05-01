@@ -124,6 +124,17 @@ fig.savefig(os.path.join(output_dir, FILENAME_COINCIDENCE))
 print("Finished generating 2D plot.")
 plt.close()
 
+
+# # plot noise
+# plt.pcolormesh(X, Y, noise)
+# plt.colorbar(label="Noise")
+# plt.xlabel("Servo Position (mm)")
+# plt.ylabel("Wavelength (nm)")
+#
+# plt.tight_layout()
+# plt.show()
+# plt.close()
+
 # # plotting of singles counts
 # plt.pcolormesh(X, Y, singles_1)
 # plt.colorbar(label="Counts (Channel 1)")
