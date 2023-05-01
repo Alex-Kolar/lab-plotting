@@ -102,8 +102,8 @@ fig.delaxes(ax[1][0])
 X, Y = np.meshgrid(servo_pos, wavelengths)
 pcm = ax[0][1].pcolormesh(X, Y, coincidences_adj, cmap='magma')
 cb = fig.colorbar(pcm, ax=ax[0][1], label="Coincidence Counts")
-ax[1][1].plot(servo_pos, coincidences_servo)
-ax[0][0].plot(coincidences_wavelength, wavelengths)
+ax[1][1].fill_between(servo_pos, coincidences_servo)
+ax[0][0].fill_betweenx(wavelengths, coincidences_wavelength)
 
 # ax[1][1].tick_params(labelleft=False)
 ax[0][1].tick_params(labelbottom=False,
