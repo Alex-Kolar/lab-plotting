@@ -25,7 +25,7 @@ def gauss_fit(x, bckgd, x0, sigma, height):
 # experimental and CSV parameters
 data_filename = \
     '/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab members/ZhongLab_Alex' \
-    '/Entangled Photon Measurements/spec_hom_optimize_458mW_25Apr2023.csv'
+    '/Entangled Photon Measurements/SHO_FineScan_391mW_27Apr2023.csv'
 WAVELENGTH = 'Wavelength'
 SERVO_POS = 'Servo_pos'
 MAX_COUNT = 'Max_count'
@@ -57,7 +57,7 @@ except FileExistsError:
     pass
 
 # wavelength to analyze and fit
-WAVELENGTH_TO_FIT = 1535.5  # unit: nm
+WAVELENGTH_TO_FIT = 1535.6  # unit: nm
 
 
 df = pd.read_csv(data_filename)
@@ -125,34 +125,63 @@ print("Finished generating 2D plot.")
 plt.close()
 
 
-# # plot noise
-# plt.pcolormesh(X, Y, noise)
-# plt.colorbar(label="Noise")
-# plt.xlabel("Servo Position (mm)")
-# plt.ylabel("Wavelength (nm)")
-#
-# plt.tight_layout()
-# plt.show()
-# plt.close()
+# plotting of coincidences at HOM dip
+pos_idx = np.argmin(coincidences_servo)
 
-# # plotting of singles counts
-# plt.pcolormesh(X, Y, singles_1)
-# plt.colorbar(label="Counts (Channel 1)")
-# plt.xlabel("Servo Position (mm)")
-# plt.ylabel("Wavelength (nm)")
-#
-# plt.tight_layout()
-# plt.show()
-# plt.close()
-#
-# plt.pcolormesh(X, Y, singles_2)
-# plt.colorbar(label="Counts (Channel 2)")
-# plt.xlabel("Servo Position (mm)")
-# plt.ylabel("Wavelength (nm)")
-#
-# plt.tight_layout()
-# plt.show()
-# plt.close()
+plt.plot(wavelengths, coincidences[:,pos_idx], '-o', color='cornflowerblue',
+         label='Coincidences')
+plt.plot(wavelengths, noise[:,pos_idx], '-o', color='coral',
+         label='Bkgd. Coincidences')
+plt.title("Coincidences at {:.3} mm".format(servo_pos[pos_idx]))
+plt.xlabel("Wavelength (nm)")
+plt.ylabel("Coincidence Counts")
+plt.legend(shadow=True)
+plt.show()
+plt.close()
+
+
+wave_diff = np.abs(wavelengths - WAVELENGTH_TO_FIT)
+wave_idx = wave_diff.argmin()
+print(f"Closest wavelength: {wavelengths[wave_idx]}")
+plt.plot(servo_pos, coincidences[wave_idx], '-o', color='cornflowerblue',
+         label='Coincidences')
+plt.plot(servo_pos, noise[wave_idx], '-o', color='coral',
+         label='Bkgd. Coincidences')
+plt.title("Coincidences at {:.5} nm".format(wavelengths[wave_idx]))
+plt.xlabel("Servo Position (mm)")
+plt.ylabel("Coincidence Counts")
+plt.legend(shadow=True)
+plt.show()
+
+
+# plot noise
+plt.pcolormesh(X, Y, noise)
+plt.colorbar(label="Noise")
+plt.xlabel("Servo Position (mm)")
+plt.ylabel("Wavelength (nm)")
+
+plt.tight_layout()
+plt.show()
+plt.close()
+
+# plotting of singles counts
+plt.pcolormesh(X, Y, singles_1)
+plt.colorbar(label="Counts (Channel 1)")
+plt.xlabel("Servo Position (mm)")
+plt.ylabel("Wavelength (nm)")
+
+plt.tight_layout()
+plt.show()
+plt.close()
+
+plt.pcolormesh(X, Y, singles_2)
+plt.colorbar(label="Counts (Channel 2)")
+plt.xlabel("Servo Position (mm)")
+plt.ylabel("Wavelength (nm)")
+
+plt.tight_layout()
+plt.show()
+plt.close()
 
 
 # # do some fitting

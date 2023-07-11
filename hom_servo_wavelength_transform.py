@@ -67,7 +67,8 @@ wavelengths = np.unique(wavelengths_all)
 num_per_wl = len(wavelengths_all) // len(wavelengths)
 print("Number of unique wavelengths:", len(wavelengths))
 print("Number of entries per wavelength:", num_per_wl)
-freqs = 3e8 / (wavelengths * 1e-9)
+freqs = 3e8 / (wavelengths * 1e-9)  # unit: Hz
+freqs *= 1e-12  # convert to THz
 
 # get servo positions
 servo_pos = df[SERVO_POS][:num_per_wl].to_numpy()
@@ -84,10 +85,27 @@ coincidences_adj = coincidences - noise
 
 
 # do transform
-given_time = coincidences_adj[:,0]
-plt.plot(freqs, given_time)
+coincidences_transform = np.zeros(coincidences_adj.shape, dtype=complex)
+for i, column in enumerate(coincidences_adj.T):
+    # rearrange
+    transformed_column = np.fft.ifft(column)
+    coincidences_transform[:,i] = transformed_column
+
+X, Y = np.meshgrid(servo_pos, freqs)
+plt.pcolormesh(X, Y, np.abs(coincidences_transform), cmap='magma')
 plt.show()
 plt.close()
+
+# given_time = coincidences_adj[:,20]
+# plt.plot(freqs, given_time)
+# plt.show()
+# plt.close()
+#
+# transformed = np.fft.fft(given_time)
+# print(transformed)
+# plt.plot(np.abs(transformed))
+# plt.show()
+# plt.close()
 
 
 # plotting
@@ -98,7 +116,7 @@ pcm = ax.pcolormesh(X, Y, coincidences_adj, cmap='magma')
 cb = fig.colorbar(pcm, ax=ax, label="Coincidence Counts")
 
 ax.set_xlabel("Servo Position (mm)")
-ax.set_ylabel("Frequency (Hz)")
+ax.set_ylabel("Frequency (THz)")
 
 fig.tight_layout()
 fig.savefig(os.path.join(output_dir, FILENAME_COINCIDENCE))
