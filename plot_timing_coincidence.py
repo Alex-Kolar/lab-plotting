@@ -2,12 +2,13 @@ import pandas as pd
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from lmfit.models import GaussianModel, ConstantModel
+from lmfit.models import LorentzianModel, ConstantModel
 
 
 FILENAME = "/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators" \
            "/Coincidence Count Measurement/08022023/Correlation-2_2023-08-03_14-43-39_(30sec_int).txt"
 FITTING = True  # add a gaussian fit
+WAVELENGTH = 1537.782  # units: nm
 
 # plotting params
 mpl.rcParams.update({'font.sans-serif': 'Helvetica',
@@ -25,7 +26,7 @@ time_diff = time[1] - time[0]  # spacing of histogram
 
 # fitting
 if FITTING:
-    model = GaussianModel() + ConstantModel()
+    model = LorentzianModel() + ConstantModel()
     center_guess = time[coincidence.idxmax()]
     amplitude_guess = coincidence.max()
     res = model.fit(df["Counts"], x=time,
@@ -57,3 +58,12 @@ ax.set_ylabel("Coincidence Counts")
 
 fig.tight_layout()
 fig.show()
+
+if FITTING:
+    spec_line = 1 / ((sigma_single * 1e-9) * 2 * np.pi)  # unit: Hz
+    spec_line *= 1e-6  # unit: MHz
+    cav_freq = 3e8 / (WAVELENGTH * 1e-9)  # unit: Hz
+    cav_freq *= 1e-6  # unit: MHz
+    print("Sigma (single): {} ns".format(sigma_single))
+    print("Sigma (frequency): {} MHz".format(spec_line))
+    print("Q: {}".format(cav_freq / spec_line))
