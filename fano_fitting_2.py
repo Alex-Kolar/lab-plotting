@@ -14,6 +14,7 @@ SCAN_RANGE = 2.7  # unit: GHz
 mpl.rcParams.update({'font.sans-serif': 'Helvetica',
                      'font.size': 12})
 xlim = (1000, 2000)
+color = 'cornflowerblue'
 
 
 df = pd.read_csv(DATA, header=11)
@@ -47,7 +48,7 @@ q = freq_light / sigma
 print("Q:", q)
 
 
-plt.plot(freq, transmission, label="Transmission")
+plt.plot(freq, transmission, color=color, label="Transmission")
 plt.plot(freq, out.best_fit, '--k', label="Fit")
 plt.xlim(xlim)
 plt.grid('on')
