@@ -68,6 +68,7 @@ df_bg_freq = pd.read_csv(bg_path_freq, names=TEK_HEADER)
 # read starting times, peaks, and single scan
 all_peaks = []  # NOTE: this is the INDEX of the peak in the array
 all_starts = []  # NOTE: this is also the INDEX of the first scan in the array
+all_peak_times = []
 all_mins = []
 for df, df_freq in zip(dfs, dfs_freq):
     scan_peaks = find_peaks(df_freq["Volts"], prominence=PROMINENCE_SCAN)[0]
@@ -78,6 +79,10 @@ for df, df_freq in zip(dfs, dfs_freq):
                        prominence=PROMINENCE, distance=DISTANCE)[0]
     peaks = peaks[peaks > scan_first_peak]
     all_peaks.append(peaks)
+
+    time = df["Seconds"]
+    peak_times = time[peaks]
+    all_peak_times.append(peak_times)
 
     trans_min = min(df["Volts"][scan_first_peak:])
     all_mins.append(trans_min)
@@ -163,7 +168,7 @@ plt.show()
 
 
 # for looking at all peaks + fit
-color='tab:blue'
+color = 'tab:blue'
 plt.semilogy(all_times_combine, all_peaks_combine,
              'o', label='Data')
 plt.semilogy(all_times_combine, result.best_fit,
@@ -213,7 +218,19 @@ plt.tight_layout()
 plt.show()
 
 
-# for looking at individual scan + fit
+# # for looking at individual scan decay
+for i, df in enumerate(dfs):
+    peak_amp = df["Volts"][all_peaks[i]]
+    times = all_peak_times[i]
+    plt.semilogy(times, peak_amp, '-o')
+
+plt.title("All Peak Transmission Values (6A B-Field)")
+plt.xlabel("Time within scan (s)")
+plt.ylabel("Transmission (A.U.)")
+plt.grid('on')
+
+plt.tight_layout()
+plt.show()
 
 
 # # for studying one round of peaks
