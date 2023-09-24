@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 
 # for data
-DATA_DIR = "/Users/alexkolar/Desktop/Projects/AFC/6Amp/hole"
+DATA_DIR = "/Users/alexkolar/Desktop/Projects/AFC/09_18_23/6Amp/hole"
 TEK_HEADER = ["ParamLabel", "ParamVal", "None", "Seconds", "Volts", "None2"]  # hard-coded from TEK oscilloscope
 
 # for peak finding
@@ -40,8 +40,8 @@ csv_files_freq = glob.glob('*/CH3.CSV', recursive=True, root_dir=DATA_DIR)
 csv_paths = [os.path.join(DATA_DIR, file) for file in csv_files]
 csv_paths_freq = [os.path.join(DATA_DIR, file) for file in csv_files_freq]
 
-bg_path = DATA_DIR + "/bg_offres/CH1.CSV"
-bg_path_freq = DATA_DIR + "/bg_offres/CH3.CSV"
+bg_path = DATA_DIR + "/0p128ms/bg_offres/center.CSV"
+bg_path_freq = DATA_DIR + "/0p128ms/bg_offres/CH3.CSV"
 
 
 # read wait times
@@ -67,6 +67,7 @@ df_bg_freq = pd.read_csv(bg_path_freq, names=TEK_HEADER)
 # read starting times, peaks, and single scan
 all_peaks = []  # NOTE: this is the INDEX of the peak in the array
 all_starts = []  # NOTE: this is also the INDEX of the first scan in the array
+all_mins = []
 for df, df_freq in zip(dfs, dfs_freq):
     scan_peaks = find_peaks(df_freq["Volts"], prominence=PROMINENCE_SCAN)[0]
     scan_first_peak = scan_peaks[0]
@@ -77,6 +78,9 @@ for df, df_freq in zip(dfs, dfs_freq):
     peaks = peaks[peaks > scan_first_peak]
     all_peaks.append(peaks)
 
+    trans_min = min(df["Volts"][scan_first_peak:])
+    all_mins.append(trans_min)
+
 start_bg = find_peaks(df_bg_freq["Volts"], prominence=PROMINENCE_SCAN)[0][0]
 
 # get background
@@ -85,6 +89,7 @@ min_bg = min(df_bg["Volts"][start_bg:])
 
 # accumulate all peaks
 all_peaks_combine = []
+all_amps_combine = []
 all_times_combine = []
 for i, df in enumerate(dfs):
     start_idx = all_starts[i]
@@ -93,10 +98,12 @@ for i, df in enumerate(dfs):
     time += (t_wait[i]/1e3 - time[start_idx])  # add offset
     peak_times = time[all_peaks[i]]
 
+    peak_amps = (peak_heights - all_mins[i]).tolist()
     peak_heights = peak_heights.tolist()
     peak_times = peak_times.tolist()
 
     all_peaks_combine += peak_heights
+    all_amps_combine += peak_amps
     all_times_combine += peak_times
 
 # fitting
@@ -108,7 +115,20 @@ params.add('tau_fast', value=0.0005, min=0)
 params.add('tau_slow', value=1, min=0)
 params.add('offset', value=0)
 result = model.fit(all_peaks_combine, params=params, x=all_times_combine)
+print("FIT REPORT (peak height)")
 print(result.fit_report())
+
+model_amp = Model(decay_double_log)
+params_amp = Parameters()
+params_amp.add('amp_fast', value=0.2, min=0)
+params_amp.add('amp_slow', value=0.2, min=0)
+params_amp.add('tau_fast', value=0.0005, min=0)
+params_amp.add('tau_slow', value=10000, min=0)
+params_amp.add('offset', value=0)
+result_amp = model_amp.fit(all_amps_combine, params=params_amp, x=all_times_combine)
+print("")
+print("FIT REPORT (peak amplitude)")
+print(result_amp.fit_report())
 
 
 # for looking at all scans
@@ -147,8 +167,26 @@ plt.semilogy(all_times_combine, all_peaks_combine,
 plt.semilogy(all_times_combine, result.best_fit,
              'k--', label='Fit')
 
-plt.xlim((-0.1, 0.6))
+# plt.xlim((-0.1, 0.6))
 plt.title("Hole Transmission Decay (6A B-Field)")
+plt.xlabel("Time (s)")
+plt.ylabel("Transmission (A.U.)")
+plt.legend()
+plt.grid('on')
+
+plt.tight_layout()
+plt.show()
+
+
+# for looking at all amplitudes + fit
+color = 'tab:orange'
+plt.loglog(all_times_combine, all_amps_combine,
+             'o', color=color, label='Data')
+plt.loglog(all_times_combine, result_amp.best_fit,
+             'k--', label='Fit')
+
+# plt.xlim((-0.1, 0.6))
+plt.title("Hole Transmission Amplitude Decay (6A B-Field)")
 plt.xlabel("Time (s)")
 plt.ylabel("Transmission (A.U.)")
 plt.legend()
@@ -166,11 +204,16 @@ plt.show()
 # # plt.plot(dfs[SCAN_TO_PLOT]["Seconds"], dfs[SCAN_TO_PLOT]["Volts"])
 # plt.plot(dfs[SCAN_TO_PLOT]["Volts"])
 # # plt.plot(dfs_freq[0]["Seconds"], dfs_freq[0]["Volts"])
-# plt.plot(dfs[SCAN_TO_PLOT]["Seconds"][all_peaks[SCAN_TO_PLOT]],
-#          dfs[SCAN_TO_PLOT]["Volts"][all_peaks[SCAN_TO_PLOT]],
+# plt.plot(dfs[SCAN_TO_PLOT]["Volts"][all_peaks[SCAN_TO_PLOT]],
 #          'x')
+# plt.plot([0, len(dfs[SCAN_TO_PLOT]["Volts"])],
+#          [all_mins[SCAN_TO_PLOT], all_mins[SCAN_TO_PLOT]],
+#          '--')
 # print([len(a) for a in all_peaks])
 # print(all_peaks[SCAN_TO_PLOT])
+#
+# plt.tight_layout()
+# plt.show()
 
 
 # # for looking at detected peaks
