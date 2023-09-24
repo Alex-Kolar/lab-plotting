@@ -23,6 +23,7 @@ mpl.rcParams.update({'font.size': 12,
                      'figure.figsize': (8, 6)})
 xlim_all_plots = (-1, 11)
 PLOT_BG = True
+PLOT_DECAY = True
 
 
 # fit functions
@@ -162,10 +163,26 @@ plt.show()
 
 
 # for looking at all peaks + fit
+color='tab:blue'
 plt.semilogy(all_times_combine, all_peaks_combine,
              'o', label='Data')
 plt.semilogy(all_times_combine, result.best_fit,
              'k--', label='Fit')
+if PLOT_DECAY:
+    for i, df in enumerate(dfs):
+        start_idx = all_starts[i]
+        time = df["Seconds"][start_idx:]
+        transmission = df["Volts"][start_idx:]
+
+        # time *= 1e3  # convert to ms
+        time += (t_wait[i] / 1e3 - time[start_idx])  # add offset
+
+        if i == 0:
+            plt.loglog(time, transmission, label="Transmission",
+                         color=color, alpha=0.2)
+        else:
+            plt.loglog(time, transmission,
+                         color=color, alpha=0.2)
 
 # plt.xlim((-0.1, 0.6))
 plt.title("Hole Transmission Decay (6A B-Field)")
