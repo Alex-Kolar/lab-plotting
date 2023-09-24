@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 
 # for data
-DATA_DIR = "/Users/alexkolar/Desktop/Projects/AFC/4Amp/hole"
+DATA_DIR = "/Users/alexkolar/Desktop/Projects/AFC/6Amp/hole"
 TEK_HEADER = ["ParamLabel", "ParamVal", "None", "Seconds", "Volts", "None2"]  # hard-coded from TEK oscilloscope
 
 # for peak finding
@@ -28,6 +28,10 @@ PLOT_BG = True
 # fit functions
 def decay_double(x, amp_fast, amp_slow, tau_fast, tau_slow, offset):
     return amp_fast * np.exp(-x / tau_fast) + amp_slow * np.exp(-x / tau_slow) + offset
+
+
+def decay_double_log(x, amp_fast, amp_slow, tau_fast, tau_slow, offset):
+    return np.exp(amp_fast * np.exp(-x / tau_fast) + amp_slow * np.exp(-x / tau_slow) + offset)
 
 
 # locate all files
@@ -64,12 +68,15 @@ df_bg_freq = pd.read_csv(bg_path_freq, names=TEK_HEADER)
 all_peaks = []  # NOTE: this is the INDEX of the peak in the array
 all_starts = []  # NOTE: this is also the INDEX of the first scan in the array
 for df, df_freq in zip(dfs, dfs_freq):
-    scan_first_peak = find_peaks(df_freq["Volts"], prominence=PROMINENCE_SCAN)[0][0]
+    scan_peaks = find_peaks(df_freq["Volts"], prominence=PROMINENCE_SCAN)[0]
+    scan_first_peak = scan_peaks[0]
+
     all_starts.append(scan_first_peak)
     peaks = find_peaks(df["Volts"],
                        prominence=PROMINENCE, distance=DISTANCE)[0]
     peaks = peaks[peaks > scan_first_peak]
     all_peaks.append(peaks)
+
 start_bg = find_peaks(df_bg_freq["Volts"], prominence=PROMINENCE_SCAN)[0][0]
 
 # get background
@@ -93,7 +100,7 @@ for i, df in enumerate(dfs):
     all_times_combine += peak_times
 
 # fitting
-model = Model(decay_double)
+model = Model(decay_double_log)
 params = Parameters()
 params.add('amp_fast', value=0.2, min=0)
 params.add('amp_slow', value=0.2, min=0)
@@ -104,7 +111,7 @@ result = model.fit(all_peaks_combine, params=params, x=all_times_combine)
 print(result.fit_report())
 
 
-# for looking at all peaks
+# for looking at all scans
 color = 'tab:blue'
 for i, df in enumerate(dfs):
     start_idx = all_starts[i]
@@ -115,9 +122,9 @@ for i, df in enumerate(dfs):
     time += (t_wait[i]/1e3 - time[start_idx])  # add offset
 
     if i == 0:
-        plt.semilogy(time, transmission, label="Transmission", color=color)
+        plt.plot(time, transmission, label="Transmission", color=color)
     else:
-        plt.semilogy(time, transmission, color=color)
+        plt.plot(time, transmission, color=color)
 
 if PLOT_BG:
     plt.fill_between(xlim_all_plots, max_bg, min_bg, label="Background",
@@ -134,13 +141,14 @@ plt.tight_layout()
 plt.show()
 
 
-# for looking at all peaks
+# for looking at all peaks + fit
 plt.semilogy(all_times_combine, all_peaks_combine,
              'o', label='Data')
 plt.semilogy(all_times_combine, result.best_fit,
              'k--', label='Fit')
 
-plt.title("Hole Transmission Decay (4A B-Field)")
+plt.xlim((-0.1, 0.6))
+plt.title("Hole Transmission Decay (6A B-Field)")
 plt.xlabel("Time (s)")
 plt.ylabel("Transmission (A.U.)")
 plt.legend()
@@ -150,7 +158,7 @@ plt.tight_layout()
 plt.show()
 
 
-# for looking at fit of data
+# for looking at individual scan + fit
 
 
 # # for studying one round of peaks
