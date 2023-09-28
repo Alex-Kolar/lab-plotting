@@ -6,6 +6,7 @@ from scipy.signal import find_peaks
 from lmfit import Parameters, Model
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from matplotlib.collections import LineCollection
 
 
 # for data
@@ -24,6 +25,13 @@ mpl.rcParams.update({'font.size': 12,
 xlim_all_plots = (-1, 11)
 PLOT_BG = True
 PLOT_DECAY = True
+
+
+def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
+    new_cmap = mpl.colors.LinearSegmentedColormap.from_list(
+        'trunc({n},{a:.2f},{b:.2f})'.format(n=cmap.name, a=minval, b=maxval),
+        cmap(np.linspace(minval, maxval, n)))
+    return new_cmap
 
 
 # fit functions
@@ -219,15 +227,30 @@ plt.show()
 
 
 # # for looking at individual scan decay
+lines = []
 for i, df in enumerate(dfs):
     peak_amp = df["Volts"][all_peaks[i]]
     times = all_peak_times[i]
-    plt.semilogy(times, peak_amp, '-o')
+    # plt.semilogy(times, peak_amp, '-o')
+    line = np.column_stack((times, peak_amp))
+    lines.append(line)
 
-plt.title("All Peak Transmission Values (6A B-Field)")
-plt.xlabel("Time within scan (s)")
-plt.ylabel("Transmission (A.U.)")
-plt.grid('on')
+cmap = truncate_colormap(mpl.cm.Blues, 0.3, 1)
+line_coll = LineCollection(lines, cmap=cmap)
+scale = np.log10(t_wait / 1e3)  # convert to s
+line_coll.set_array(scale)
+
+fig, ax = plt.subplots()
+ax.add_collection(line_coll, autolim=True)
+ax.autoscale_view()
+ax.set_yscale('log')
+axcb = fig.colorbar(line_coll, ax=ax)
+axcb.set_label(r"$\log_{10}(T_{wait})$ (s)")
+
+ax.set_title("All Peak Transmission Values (6A B-Field)")
+ax.set_xlabel("Time within scan (s)")
+ax.set_ylabel("Transmission (A.U.)")
+ax.grid('on')
 
 plt.tight_layout()
 plt.show()
