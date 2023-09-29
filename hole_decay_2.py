@@ -35,7 +35,7 @@ PLOT_ALL_PEAKS = False
 PLOT_ALL_AMPLITUDES = False
 PLOT_STACKED_SCANS = False
 PLOT_SINGLE_SCAN = False
-PLOT_SINGLE_SCAN_HOLES = True
+PLOT_SINGLE_SCAN_HOLES = False
 
 
 def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
@@ -58,6 +58,7 @@ def decay_double_log(x, amp_fast, amp_slow, tau_fast, tau_slow, offset):
 FILE PROCESSING
 """
 
+print("gathering files")
 
 # locate all files
 csv_files = glob.glob('*/center.CSV', recursive=True, root_dir=DATA_DIR)
@@ -93,6 +94,7 @@ df_bg_freq = pd.read_csv(bg_path_freq, names=TEK_HEADER)
 DATA PROCESSING
 """
 
+print("gathering transmission peaks and background")
 
 # read starting times, peaks, and single scan
 all_peaks = []  # NOTE: this is the INDEX of the peak in the array
@@ -148,6 +150,8 @@ for i, df in enumerate(dfs):
 
 
 # fitting
+print("fitting hole peak decay")
+
 model = Model(decay_double_log)
 params = Parameters()
 params.add('amp_fast', value=0.2, min=0)
@@ -156,6 +160,7 @@ params.add('tau_fast', value=0.0005, min=0)
 params.add('tau_slow', value=1, min=0)
 params.add('offset', value=0)
 result = model.fit(all_peaks_combine, params=params, x=all_times_combine)
+print("")
 print("FIT REPORT (peak height)")
 print(result.fit_report())
 
@@ -172,47 +177,60 @@ print("FIT REPORT (peak amplitude)")
 print(result_amp.fit_report())
 
 # do fitting of individual holes
-print(t_wait)
-SCAN_TO_FIT = 4
+print("")
+print("fitting individual holes")
 model = LorentzianModel() + ConstantModel()
 all_hole_times = []
 all_hole_results = []
-for i, (start_idx, end_idx) in enumerate(zip(all_scan_edges[SCAN_TO_FIT][:-1],
-                                             all_scan_edges[SCAN_TO_FIT][1:])):
-    time = dfs[SCAN_TO_FIT]["Seconds"][start_idx:end_idx]
-    all_hole_times.append(time)
+all_hole_linewidth = []
+all_hole_error = []
 
-    trans_data = dfs[SCAN_TO_FIT]["Volts"][start_idx:end_idx]
-    center_guess = dfs[SCAN_TO_FIT]["Seconds"][all_peaks[SCAN_TO_FIT][i]]
-    sigma_guess = 0.0005
-    if LOG_SCALE:
-        result_hole = model.fit(np.log(trans_data), x=time,
-                                center=center_guess, sigma=0.0005)
-    else:
-        result_hole = model.fit(trans_data, x=time,
-                                center=center_guess, sigma=0.0005)
-    all_hole_results.append(result_hole)
+for i, df in enumerate(dfs):
+    print(f"\tfitting holes for scan {i+1}/{len(t_wait)}")
+    hole_times = []
+    hole_results = []
+    linewidths = []
+    errors = []
+
+    for j, (start_idx, end_idx) in enumerate(zip(all_scan_edges[i][:-1],
+                                                 all_scan_edges[i][1:])):
+        time = df["Seconds"][start_idx:end_idx]
+        hole_times.append(time)
+
+        trans_data = df["Volts"][start_idx:end_idx]
+        center_guess = df["Seconds"][all_peaks[i][j]]
+        sigma_guess = 0.0005
+        if LOG_SCALE:
+            result_hole = model.fit(np.log(trans_data), x=time,
+                                    center=center_guess, sigma=0.0005)
+        else:
+            result_hole = model.fit(trans_data, x=time,
+                                    center=center_guess, sigma=0.0005)
+        hole_results.append(result_hole)
+
+        # convert linewidth to frequency
+        width_time = result_hole.params['fwhm'].value  # unit: seconds
+        error_time = result_hole.params['fwhm'].stderr  # unit: seconds
+        scaling = SCAN_RANGE / (max(time) - min(time))
+        width = width_time * scaling  # unit: MHz
+        error = error_time * scaling  # unit: MHz
+        linewidths.append(width)
+        errors.append(error)
+
+    all_hole_times.append(hole_times)
+    all_hole_results.append(hole_results)
+    all_hole_linewidth.append(linewidths)
+    all_hole_error.append(errors)
 
 print("")
 print("FIT REPORT (first hole fitting)")
-print(all_hole_results[0].fit_report())
+print(all_hole_results[0][0].fit_report())
 
-# convert linewidths to frequency
-linewidths = []
-errors = []
-for time, res in zip(all_hole_times, all_hole_results):
-    width_time = res.params['fwhm'].value  # unit: seconds
-    error_time = res.params['fwhm'].stderr  # unit: seconds
-    scaling = SCAN_RANGE / (max(time) - min(time))
-    width = width_time * scaling  # unit: MHz
-    error = error_time * scaling  # unit: MHz
-    linewidths.append(width)
-    errors.append(error)
+# print("")
+# print("LINEWIDTHS (FWHM):")
+# for i, (lw, err) in enumerate(zip(linewidths, errors)):
+#     print(f"\t{i+1}: {lw:.3f} +/- {err:.3f} MHz")
 
-print("")
-print("LINEWIDTHS (FWHM):")
-for i, (lw, err) in enumerate(zip(linewidths, errors)):
-    print(f"\t{i+1}: {lw:.3f} +/- {err:.3f} MHz")
 
 """
 PLOTTING
@@ -362,8 +380,8 @@ if PLOT_SINGLE_SCAN:
 
 # for studying individual hole fits
 if PLOT_SINGLE_SCAN_HOLES:
-    SCAN_TO_PLOT = 4
-    assert SCAN_TO_PLOT == SCAN_TO_FIT  # (remove later)
+    SCAN_TO_PLOT = -1
+
     color1 = 'tab:blue'
     if LOG_SCALE:
         plt.plot(dfs[SCAN_TO_PLOT]["Seconds"][all_starts[SCAN_TO_PLOT]:],
@@ -374,7 +392,8 @@ if PLOT_SINGLE_SCAN_HOLES:
                  dfs[SCAN_TO_PLOT]["Volts"][all_starts[SCAN_TO_PLOT]:],
                  color=color1, label='Data')
 
-    for i, (time, res) in enumerate(zip(all_hole_times, all_hole_results)):
+    for i, (time, res) in enumerate(zip(all_hole_times[SCAN_TO_PLOT],
+                                        all_hole_results[SCAN_TO_PLOT])):
         if i == 0:
             plt.plot(time, res.best_fit,
                      'k--', label='Fit')
