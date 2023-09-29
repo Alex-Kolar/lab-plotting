@@ -29,6 +29,14 @@ xlim_all_plots = (-1, 11)
 PLOT_BG = True
 PLOT_DECAY = True
 
+# plotting output control
+PLOT_ALL_SCANS = False
+PLOT_ALL_PEAKS = False
+PLOT_ALL_AMPLITUDES = False
+PLOT_STACKED_SCANS = False
+PLOT_SINGLE_SCAN = False
+PLOT_SINGLE_SCAN_HOLES = True
+
 
 def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
     new_cmap = mpl.colors.LinearSegmentedColormap.from_list(
@@ -211,183 +219,177 @@ PLOTTING
 """
 
 
-# # for looking at all scans
-# color = 'tab:blue'
-# for i, df in enumerate(dfs):
-#     start_idx = all_starts[i]
-#     time = df["Seconds"][start_idx:]
-#     transmission = df["Volts"][start_idx:]
-#
-#     # time *= 1e3  # convert to ms
-#     time += (t_wait[i]/1e3 - time[start_idx])  # add offset
-#
-#     if i == 0:
-#         plt.plot(time, transmission, label="Transmission", color=color)
-#     else:
-#         plt.plot(time, transmission, color=color)
-#
-# if PLOT_BG:
-#     plt.fill_between(xlim_all_plots, max_bg, min_bg, label="Background",
-#                      color='tab:gray', alpha=0.2)
-#
-# plt.xlim(xlim_all_plots)
-# plt.title("Hole Transmission Decay (6A B-Field)")
-# plt.xlabel("Time (s)")
-# plt.ylabel("Transmission (A.U.)")
-# plt.legend()
-# plt.grid('on')
-#
-# plt.tight_layout()
-# plt.show()
+# for looking at all scans
+if PLOT_ALL_SCANS:
+    color = 'tab:blue'
+    for i, df in enumerate(dfs):
+        start_idx = all_starts[i]
+        time = df["Seconds"][start_idx:]
+        transmission = df["Volts"][start_idx:]
+
+        # time *= 1e3  # convert to ms
+        time += (t_wait[i]/1e3 - time[start_idx])  # add offset
+
+        if i == 0:
+            plt.plot(time, transmission, label="Transmission", color=color)
+        else:
+            plt.plot(time, transmission, color=color)
+
+    if PLOT_BG:
+        plt.fill_between(xlim_all_plots, max_bg, min_bg, label="Background",
+                         color='tab:gray', alpha=0.2)
+
+    plt.xlim(xlim_all_plots)
+    plt.title("Hole Transmission Decay (6A B-Field)")
+    plt.xlabel("Time (s)")
+    plt.ylabel("Transmission (A.U.)")
+    plt.legend()
+    plt.grid('on')
+
+    plt.tight_layout()
+    plt.show()
 
 
 # # for looking at all peaks + fit
-# color = 'tab:blue'
-# plt.semilogy(all_times_combine, all_peaks_combine,
-#              'o', label='Data')
-# plt.semilogy(all_times_combine, result.best_fit,
-#              'k--', label='Fit')
-# if PLOT_DECAY:
-#     for i, df in enumerate(dfs):
-#         start_idx = all_starts[i]
-#         time = df["Seconds"][start_idx:]
-#         transmission = df["Volts"][start_idx:]
-#
-#         # time *= 1e3  # convert to ms
-#         time += (t_wait[i] / 1e3 - time[start_idx])  # add offset
-#
-#         if i == 0:
-#             plt.loglog(time, transmission, label="Transmission",
-#                          color=color, alpha=0.2)
-#         else:
-#             plt.loglog(time, transmission,
-#                          color=color, alpha=0.2)
-#
-# # plt.xlim((-0.1, 0.6))
-# plt.title("Hole Transmission Decay (6A B-Field)")
-# plt.xlabel("Time (s)")
-# plt.ylabel("Transmission (A.U.)")
-# plt.legend()
-# plt.grid('on')
-#
-# plt.tight_layout()
-# plt.show()
+if PLOT_ALL_PEAKS:
+    color = 'tab:blue'
+    plt.semilogy(all_times_combine, all_peaks_combine,
+                 'o', label='Data')
+    plt.semilogy(all_times_combine, result.best_fit,
+                 'k--', label='Fit')
+    if PLOT_DECAY:
+        for i, df in enumerate(dfs):
+            start_idx = all_starts[i]
+            time = df["Seconds"][start_idx:]
+            transmission = df["Volts"][start_idx:]
+
+            # time *= 1e3  # convert to ms
+            time += (t_wait[i] / 1e3 - time[start_idx])  # add offset
+
+            if i == 0:
+                plt.loglog(time, transmission, label="Transmission",
+                             color=color, alpha=0.2)
+            else:
+                plt.loglog(time, transmission,
+                             color=color, alpha=0.2)
+
+    # plt.xlim((-0.1, 0.6))
+    plt.title("Hole Transmission Decay (6A B-Field)")
+    plt.xlabel("Time (s)")
+    plt.ylabel("Transmission (A.U.)")
+    plt.legend()
+    plt.grid('on')
+
+    plt.tight_layout()
+    plt.show()
 
 
 # for looking at all amplitudes + fit
-color = 'tab:orange'
-plt.loglog(all_times_combine, all_amps_combine,
-             'o', color=color, label='Data')
-plt.loglog(all_times_combine, result_amp.best_fit,
-             'k--', label='Fit')
+if PLOT_ALL_AMPLITUDES:
+    color = 'tab:orange'
+    plt.loglog(all_times_combine, all_amps_combine,
+                 'o', color=color, label='Data')
+    plt.loglog(all_times_combine, result_amp.best_fit,
+                 'k--', label='Fit')
 
-# plt.xlim((-0.1, 0.6))
-plt.title("Hole Transmission Amplitude Decay (6A B-Field)")
-plt.xlabel("Time (s)")
-plt.ylabel("Transmission (A.U.)")
-plt.legend()
-plt.grid('on')
+    # plt.xlim((-0.1, 0.6))
+    plt.title("Hole Transmission Amplitude Decay (6A B-Field)")
+    plt.xlabel("Time (s)")
+    plt.ylabel("Transmission (A.U.)")
+    plt.legend()
+    plt.grid('on')
 
-plt.tight_layout()
-plt.show()
+    plt.tight_layout()
+    plt.show()
 
 
-# # # for looking at individual scan decay
-# lines = []
-# for i, df in enumerate(dfs):
-#     peak_amp = df["Volts"][all_peaks[i]]
-#     times = all_peak_times[i]
-#     # plt.semilogy(times, peak_amp, '-o')
-#     line = np.column_stack((times, peak_amp))
-#     lines.append(line)
-#
-# cmap = truncate_colormap(mpl.cm.Blues, 0.3, 1)
-# line_coll = LineCollection(lines, cmap=cmap)
-# scale = np.log10(t_wait / 1e3)  # convert to s
-# line_coll.set_array(scale)
-#
-# fig, ax = plt.subplots()
-# ax.add_collection(line_coll, autolim=True)
-# ax.autoscale_view()
-# ax.set_yscale('log')
-# axcb = fig.colorbar(line_coll, ax=ax)
-# axcb.set_label(r"$\log_{10}(T_{wait})$ (s)")
-#
-# ax.set_title("All Peak Transmission Values (6A B-Field)")
-# ax.set_xlabel("Time within scan (s)")
-# ax.set_ylabel("Transmission (A.U.)")
-# ax.grid('on')
-#
-# plt.tight_layout()
-# plt.show()
+# for looking at individual scan decay
+if PLOT_STACKED_SCANS:
+    lines = []
+    for i, df in enumerate(dfs):
+        peak_amp = df["Volts"][all_peaks[i]]
+        times = all_peak_times[i]
+        # plt.semilogy(times, peak_amp, '-o')
+        line = np.column_stack((times, peak_amp))
+        lines.append(line)
+
+    cmap = truncate_colormap(mpl.cm.Blues, 0.3, 1)
+    line_coll = LineCollection(lines, cmap=cmap)
+    scale = np.log10(t_wait / 1e3)  # convert to s
+    line_coll.set_array(scale)
+
+    fig, ax = plt.subplots()
+    ax.add_collection(line_coll, autolim=True)
+    ax.autoscale_view()
+    ax.set_yscale('log')
+    axcb = fig.colorbar(line_coll, ax=ax)
+    axcb.set_label(r"$\log_{10}(T_{wait})$ (s)")
+
+    ax.set_title("All Peak Transmission Values (6A B-Field)")
+    ax.set_xlabel("Time within scan (s)")
+    ax.set_ylabel("Transmission (A.U.)")
+    ax.grid('on')
+
+    plt.tight_layout()
+    plt.show()
 
 
 # for studying one scan
-SCAN_TO_PLOT = -1
+if PLOT_SINGLE_SCAN:
+    SCAN_TO_PLOT = -1
 
-fig, ax = plt.subplots()
-ax2 = ax.twinx()
+    fig, ax = plt.subplots()
+    ax2 = ax.twinx()
 
-color1 = 'tab:blue'
-ax.plot(dfs[SCAN_TO_PLOT]["Seconds"], dfs[SCAN_TO_PLOT]["Volts"],
-        color=color1)
-ax.plot(dfs[SCAN_TO_PLOT]["Seconds"][all_peaks[SCAN_TO_PLOT]],
-        dfs[SCAN_TO_PLOT]["Volts"][all_peaks[SCAN_TO_PLOT]],
-        'o', color=color1)
+    color1 = 'tab:blue'
+    ax.plot(dfs[SCAN_TO_PLOT]["Seconds"], dfs[SCAN_TO_PLOT]["Volts"],
+            color=color1)
+    ax.plot(dfs[SCAN_TO_PLOT]["Seconds"][all_peaks[SCAN_TO_PLOT]],
+            dfs[SCAN_TO_PLOT]["Volts"][all_peaks[SCAN_TO_PLOT]],
+            'o', color=color1)
 
-color2 = 'tab:orange'
-ax2.plot(dfs_freq[SCAN_TO_PLOT]["Seconds"],
-         dfs_freq[SCAN_TO_PLOT]["Volts"],
-         color=color2)
-ax2.plot(dfs_freq[SCAN_TO_PLOT]["Seconds"][all_scan_edges[SCAN_TO_PLOT]],
-         dfs_freq[SCAN_TO_PLOT]["Volts"][all_scan_edges[SCAN_TO_PLOT]],
-         'o', color=color2)
+    color2 = 'tab:orange'
+    ax2.plot(dfs_freq[SCAN_TO_PLOT]["Seconds"],
+             dfs_freq[SCAN_TO_PLOT]["Volts"],
+             color=color2)
+    ax2.plot(dfs_freq[SCAN_TO_PLOT]["Seconds"][all_scan_edges[SCAN_TO_PLOT]],
+             dfs_freq[SCAN_TO_PLOT]["Volts"][all_scan_edges[SCAN_TO_PLOT]],
+             'o', color=color2)
 
-plt.tight_layout()
-plt.show()
+    plt.tight_layout()
+    plt.show()
 
 
 # for studying individual hole fits
-SCAN_TO_PLOT = 4
-assert SCAN_TO_PLOT == SCAN_TO_FIT  # (remove later)
-color1 = 'tab:blue'
-if LOG_SCALE:
-    plt.plot(dfs[SCAN_TO_PLOT]["Seconds"][all_starts[SCAN_TO_PLOT]:],
-             np.log(dfs[SCAN_TO_PLOT]["Volts"][all_starts[SCAN_TO_PLOT]:]),
-             color=color1, label='Data')
-else:
-    plt.plot(dfs[SCAN_TO_PLOT]["Seconds"][all_starts[SCAN_TO_PLOT]:],
-             dfs[SCAN_TO_PLOT]["Volts"][all_starts[SCAN_TO_PLOT]:],
-             color=color1, label='Data')
-
-for i, (time, res) in enumerate(zip(all_hole_times, all_hole_results)):
-    if i == 0:
-        plt.plot(time, res.best_fit,
-                 'k--', label='Fit')
+if PLOT_SINGLE_SCAN_HOLES:
+    SCAN_TO_PLOT = 4
+    assert SCAN_TO_PLOT == SCAN_TO_FIT  # (remove later)
+    color1 = 'tab:blue'
+    if LOG_SCALE:
+        plt.plot(dfs[SCAN_TO_PLOT]["Seconds"][all_starts[SCAN_TO_PLOT]:],
+                 np.log(dfs[SCAN_TO_PLOT]["Volts"][all_starts[SCAN_TO_PLOT]:]),
+                 color=color1, label='Data')
     else:
-        plt.plot(time, res.best_fit,
-                 'k--')
+        plt.plot(dfs[SCAN_TO_PLOT]["Seconds"][all_starts[SCAN_TO_PLOT]:],
+                 dfs[SCAN_TO_PLOT]["Volts"][all_starts[SCAN_TO_PLOT]:],
+                 color=color1, label='Data')
 
-plt.title(rf"Hole fitting ($t_{{wait}}$ = {t_wait[SCAN_TO_PLOT]} ms)")
-plt.xlabel("Time (s)")
-if LOG_SCALE:
-    plt.ylabel("Log(Transmission) (A.U.)")
-else:
-    plt.ylabel("Transmission (A.U.)")
-plt.grid("on")
-plt.legend()
+    for i, (time, res) in enumerate(zip(all_hole_times, all_hole_results)):
+        if i == 0:
+            plt.plot(time, res.best_fit,
+                     'k--', label='Fit')
+        else:
+            plt.plot(time, res.best_fit,
+                     'k--')
 
-plt.tight_layout()
-plt.show()
+    plt.title(rf"Hole fitting ($t_{{wait}}$ = {t_wait[SCAN_TO_PLOT]} ms)")
+    plt.xlabel("Time (s)")
+    if LOG_SCALE:
+        plt.ylabel("Log(Transmission) (A.U.)")
+    else:
+        plt.ylabel("Transmission (A.U.)")
+    plt.grid("on")
+    plt.legend()
 
-# # for looking at detected peaks
-# SCAN_TO_PLOT = [0, 1, 2]
-# colors = ['tab:blue', 'tab:orange', 'tab:green']
-# for i, scan in enumerate(SCAN_TO_PLOT):
-#     plt.plot(dfs[scan]["Seconds"][all_starts[i]:], dfs[scan]["Volts"][all_starts[i]:],
-#              color=colors[i])
-#     plt.plot(dfs[scan]["Seconds"][all_peaks[scan]],
-#              dfs[scan]["Volts"][all_peaks[scan]],
-#              'x', color=colors[i])
-#
-# plt.show()
+    plt.tight_layout()
+    plt.show()
