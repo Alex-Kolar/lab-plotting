@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from scipy.signal import find_peaks
 from lmfit import Parameters, Model
-from lmfit.models import LorentzianModel, ConstantModel
+from lmfit.models import LorentzianModel, ConstantModel, ExponentialModel
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
@@ -19,7 +19,7 @@ SCAN_RANGE = 20  # Unit: MHz
 PROMINENCE = 0.01
 DISTANCE = 100  # TODO: better way to explicitly calculate this?
 PROMINENCE_SCAN = 1
-LOG_SCALE = False
+LOG_SCALE = True
 
 # for plotting
 # plotting parameters
@@ -30,12 +30,15 @@ PLOT_BG = True
 PLOT_DECAY = True
 
 # plotting output control
-PLOT_ALL_SCANS = False
-PLOT_ALL_PEAKS = False
-PLOT_ALL_AMPLITUDES = False
-PLOT_STACKED_SCANS = False
-PLOT_SINGLE_SCAN = False
-PLOT_SINGLE_SCAN_HOLES = False
+PLOT_ALL_SCANS = False  # plot all scans with background average
+PLOT_ALL_PEAKS = False  # plot all peak transmissions, with fitted double-decay exponential
+PLOT_ALL_AMPLITUDES = False  # plot all peaks minus minimum of transmission scan, with fitted double-decay
+PLOT_ALL_HEIGHTS = False  # plot all individually fitted hole heights, with fitted double-decay
+PLOT_STACKED_SCANS = False  # plot all peak transmissions, with color gradient and with no t_wait offset
+PLOT_SINGLE_SCAN = False  # plot an individual oscilloscope scan (for troubleshooting)
+PLOT_SINGLE_SCAN_HOLES = False  # plot an individual transmission scan, with fitted hole shapes
+PLOT_LINEWIDTHS = True  # plot fitted linewidth of the hole transmission as a function of time
+PLOT_BASELINE = True  # plot fitted transmission baseline as a function of time
 
 
 def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
@@ -123,6 +126,8 @@ for df, df_freq in zip(dfs, dfs_freq):
     trans_min = min(df["Volts"][scan_first_peak:])
     all_mins.append(trans_min)
 
+for df, start in zip(dfs, all_starts):
+    print("TIME:", df["Seconds"][start])
 start_bg = find_peaks(df_bg_freq["Volts"], prominence=PROMINENCE_SCAN)[0][0]
 
 # get background
@@ -182,16 +187,24 @@ print("fitting individual holes")
 model = LorentzianModel() + ConstantModel()
 all_hole_times = []
 all_hole_results = []
+all_hole_amplitudes = []
+all_hole_amp_error = []
+all_hole_background = []
+all_hole_background_error = []
+all_hole_centers = []
 all_hole_linewidth = []
 all_hole_error = []
-
 for i, df in enumerate(dfs):
     print(f"\tfitting holes for scan {i+1}/{len(t_wait)}")
     hole_times = []
     hole_results = []
+    hole_amplitudes = []
+    hole_amp_errors = []
+    hole_background = []
+    hole_background_errors = []
+    hole_centers = []
     linewidths = []
     errors = []
-
     for j, (start_idx, end_idx) in enumerate(zip(all_scan_edges[i][:-1],
                                                  all_scan_edges[i][1:])):
         time = df["Seconds"][start_idx:end_idx]
@@ -208,6 +221,13 @@ for i, df in enumerate(dfs):
                                     center=center_guess, sigma=0.0005)
         hole_results.append(result_hole)
 
+        # save specific details of fit
+        hole_amplitudes.append(result_hole.params['height'].value)
+        hole_amp_errors.append(result_hole.params['height'].stderr)
+        hole_background.append(result_hole.params['c'].value)
+        hole_background_errors.append(result_hole.params['c'].stderr)
+        hole_centers.append(result_hole.params['center'].value)
+
         # convert linewidth to frequency
         width_time = result_hole.params['fwhm'].value  # unit: seconds
         error_time = result_hole.params['fwhm'].stderr  # unit: seconds
@@ -219,17 +239,63 @@ for i, df in enumerate(dfs):
 
     all_hole_times.append(hole_times)
     all_hole_results.append(hole_results)
+    all_hole_amplitudes.append(hole_amplitudes)
+    all_hole_amp_error.append(hole_amp_errors)
+    all_hole_background.append(hole_background)
+    all_hole_background_error.append(hole_background_errors)
+    all_hole_centers.append(hole_centers)
     all_hole_linewidth.append(linewidths)
     all_hole_error.append(errors)
 
 print("")
 print("FIT REPORT (first hole fitting)")
-print(all_hole_results[0][0].fit_report())
+print(all_hole_results[-1][0].fit_report())
 
-# print("")
-# print("LINEWIDTHS (FWHM):")
-# for i, (lw, err) in enumerate(zip(linewidths, errors)):
-#     print(f"\t{i+1}: {lw:.3f} +/- {err:.3f} MHz")
+LINEWIDTHS_TO_PRINT = -1
+print("")
+print(f"Linewidths (FWHM) for t_wait = {t_wait[LINEWIDTHS_TO_PRINT]}")
+for i, (lw, err) in enumerate(zip(all_hole_linewidth[LINEWIDTHS_TO_PRINT],
+                                  all_hole_error[LINEWIDTHS_TO_PRINT])):
+    print(f"\t{i+1}: {lw} +/- {err} MHz")
+
+# accumulate all hole data
+all_amplitudes_combine = []
+all_amp_error_combine = []
+all_background_combine = []
+all_background_error_combine = []
+all_centers_combine = []
+all_linewidth_combine = []
+all_error_combine = []
+# for i, (amps, amp_errs, centers, lw, err) in \
+#         enumerate(zip(all_hole_amplitudes, all_hole_amp_error,
+#                       all_hole_centers, all_hole_linewidth, all_hole_error)):
+for i, df in enumerate(dfs):
+    start_idx = all_starts[i]
+    time_start = df["Seconds"][start_idx]
+    # time += (t_wait[i]/1e3 - time[start_idx])  # add offset
+    centers = np.array(all_hole_centers[i])
+    centers -= time_start
+    centers += (t_wait[i] / 1e3)
+    centers = centers.tolist()
+
+    all_amplitudes_combine += all_hole_amplitudes[i]
+    all_amp_error_combine += all_hole_amp_error[i]
+    all_background_combine += all_hole_background[i]
+    all_background_error_combine += all_hole_background_error[i]
+    all_centers_combine += centers
+    all_linewidth_combine += all_hole_linewidth[i]
+    all_error_combine += all_hole_error[i]
+
+
+# fit exponential decay of background T_0
+print("")
+print("fitting hole background decay")
+
+model_bg = ExponentialModel() + ConstantModel()
+result_bg = model_bg.fit(all_background_combine, x=all_centers_combine)
+print("")
+print("FIT REPORT (peak height)")
+print(result_bg.fit_report())
 
 
 """
@@ -268,11 +334,14 @@ if PLOT_ALL_SCANS:
     plt.show()
 
 
-# # for looking at all peaks + fit
+# for looking at all peaks + fit
 if PLOT_ALL_PEAKS:
-    color = 'tab:blue'
+    # color = 'tab:blue'
+    # The color below comes from the B-field scan over all transitions in February
+    # see previous plotting scripts for its determination.
+    color = (0.0, 0.3544953298505101, 0.14229911572472131)
     plt.semilogy(all_times_combine, all_peaks_combine,
-                 'o', label='Data')
+                 'o', color=color, label='Data')
     plt.semilogy(all_times_combine, result.best_fit,
                  'k--', label='Fit')
     if PLOT_DECAY:
@@ -285,10 +354,10 @@ if PLOT_ALL_PEAKS:
             time += (t_wait[i] / 1e3 - time[start_idx])  # add offset
 
             if i == 0:
-                plt.loglog(time, transmission, label="Transmission",
+                plt.semilogy(time, transmission, label="Transmission",
                              color=color, alpha=0.2)
             else:
-                plt.loglog(time, transmission,
+                plt.semilogy(time, transmission,
                              color=color, alpha=0.2)
 
     # plt.xlim((-0.1, 0.6))
@@ -316,6 +385,27 @@ if PLOT_ALL_AMPLITUDES:
     plt.ylabel("Transmission (A.U.)")
     plt.legend()
     plt.grid('on')
+
+    plt.tight_layout()
+    plt.show()
+
+
+# for looking at all fitted heights + fit
+if PLOT_ALL_HEIGHTS:
+    color = 'tab:purple'
+    fig, ax = plt.subplots()
+
+    ax.errorbar(all_centers_combine, all_amplitudes_combine,
+                yerr=all_amp_error_combine,
+                capsize=10, marker='o', linestyle='', color=color)
+    # plt.semilogy(all_times_combine, result.best_fit,
+    #              'k--', label='Fit')
+    ax.set_xscale('log')
+
+    ax.set_title("Hole Transmission Decay (6A B-Field)")
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("Hole Height Fit (A.U.)")
+    ax.grid('on')
 
     plt.tight_layout()
     plt.show()
@@ -354,7 +444,7 @@ if PLOT_STACKED_SCANS:
 
 # for studying one scan
 if PLOT_SINGLE_SCAN:
-    SCAN_TO_PLOT = -1
+    SCAN_TO_PLOT = 0
 
     fig, ax = plt.subplots()
     ax2 = ax.twinx()
@@ -380,7 +470,7 @@ if PLOT_SINGLE_SCAN:
 
 # for studying individual hole fits
 if PLOT_SINGLE_SCAN_HOLES:
-    SCAN_TO_PLOT = -1
+    SCAN_TO_PLOT = 4
 
     color1 = 'tab:blue'
     if LOG_SCALE:
@@ -409,6 +499,51 @@ if PLOT_SINGLE_SCAN_HOLES:
         plt.ylabel("Transmission (A.U.)")
     plt.grid("on")
     plt.legend()
+
+    plt.tight_layout()
+    plt.show()
+
+
+# for studying fitted hole width
+if PLOT_LINEWIDTHS:
+    fig, ax = plt.subplots()
+
+    ax.errorbar(all_centers_combine, all_linewidth_combine,
+                yerr=all_error_combine,
+                capsize=10, marker='o', linestyle='', color='tab:blue')
+    # ax2.plot(all_centers_combine, all_amplitudes_combine,
+    #          marker='o', linestyle='', color='tab:purple')
+    ax.set_xscale('log')
+
+    ax.set_title("Hole Linewidth (FWHM) versus Time")
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("Linewidth (MHz)")
+    ax.grid('on')
+
+    plt.tight_layout()
+    plt.show()
+
+
+# for studying fitted hole baseline
+if PLOT_BASELINE:
+    fig, ax = plt.subplots()
+
+    ax.errorbar(all_centers_combine, all_background_combine,
+                yerr=all_background_error_combine,
+                capsize=10, marker='o', linestyle='', color='tab:orange',
+                label='Data')
+    ax.plot(all_centers_combine, result_bg.best_fit,
+            'k--', label='Fit')
+    ax.set_xscale('log')
+
+    ax.set_title("Hole Transmission Background versus Time")
+    ax.set_xlabel("Time (s)")
+    if LOG_SCALE:
+        ax.set_ylabel(r"$\log(T_0)$ (A.U.)")
+    else:
+        ax.set_ylabel(r"$T_0$ (A.U.)")
+    ax.grid('on')
+    ax.legend()
 
     plt.tight_layout()
     plt.show()
