@@ -26,7 +26,7 @@ LOG_SCALE = True
 mpl.rcParams.update({'font.size': 12,
                      'figure.figsize': (8, 6)})
 xlim_all_plots = (-1, 11)
-PLOT_BG = True
+PLOT_BG = False
 PLOT_DECAY = True
 
 # plotting output control
@@ -69,9 +69,6 @@ csv_files_freq = glob.glob('*/CH3.CSV', recursive=True, root_dir=DATA_DIR)
 csv_paths = [os.path.join(DATA_DIR, file) for file in csv_files]
 csv_paths_freq = [os.path.join(DATA_DIR, file) for file in csv_files_freq]
 
-bg_path = DATA_DIR + "/0p128ms/bg_offres/center.CSV"
-bg_path_freq = DATA_DIR + "/0p128ms/bg_offres/CH3.CSV"
-
 # read wait times
 t_wait = np.zeros(len(csv_files))
 for i, path in enumerate(csv_files):
@@ -89,8 +86,13 @@ t_wait.sort()
 # read csvs
 dfs = [pd.read_csv(path, names=TEK_HEADER) for path in csv_paths]
 dfs_freq = [pd.read_csv(path, names=TEK_HEADER) for path in csv_paths_freq]
-df_bg = pd.read_csv(bg_path, names=TEK_HEADER)
-df_bg_freq = pd.read_csv(bg_path_freq, names=TEK_HEADER)
+
+# data for background
+if PLOT_BG:
+    bg_path = DATA_DIR + "/0p128ms/bg_offres/center.CSV"
+    bg_path_freq = DATA_DIR + "/0p128ms/bg_offres/CH3.CSV"
+    df_bg = pd.read_csv(bg_path, names=TEK_HEADER)
+    df_bg_freq = pd.read_csv(bg_path_freq, names=TEK_HEADER)
 
 
 """
@@ -128,11 +130,12 @@ for df, df_freq in zip(dfs, dfs_freq):
 
 for df, start in zip(dfs, all_starts):
     print("TIME:", df["Seconds"][start])
-start_bg = find_peaks(df_bg_freq["Volts"], prominence=PROMINENCE_SCAN)[0][0]
 
 # get background
-max_bg = max(df_bg["Volts"][start_bg:])
-min_bg = min(df_bg["Volts"][start_bg:])
+if PLOT_BG:
+    start_bg = find_peaks(df_bg_freq["Volts"], prominence=PROMINENCE_SCAN)[0][0]
+    max_bg = max(df_bg["Volts"][start_bg:])
+    min_bg = min(df_bg["Volts"][start_bg:])
 
 # accumulate all peaks
 all_peaks_combine = []
