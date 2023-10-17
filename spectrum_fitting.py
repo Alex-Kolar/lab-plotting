@@ -19,7 +19,7 @@ VERT_OFFSET = 0.05  # for text, in (normalized) data units
 
 # for output
 OUTPUT_DIR = "/Users/alexkolar/PycharmProjects/Plotting/output_figs/hole_decay/spectrum"
-SAVE = True  # if True, save to OUTPUT_DIR; otherwise, just show
+SAVE = False  # if True, save to OUTPUT_DIR; otherwise, just show
 
 
 """
@@ -29,22 +29,23 @@ FILE PROCESSING
 print("gathering files")
 
 # locate all files
-csv_files = glob.glob('**/spectrum/*/TEK0000.CSV', recursive=True, root_dir=DATA_DIR)
-csv_files_freq = glob.glob('**/spectrum/*/CH4.CSV', recursive=True, root_dir=DATA_DIR)
-csv_paths = [os.path.join(DATA_DIR, file) for file in csv_files]
-csv_paths_freq = [os.path.join(DATA_DIR, file) for file in csv_files_freq]
+dirs = glob.glob('**/spectrum/*/', recursive=True, root_dir=DATA_DIR)
+# csv_files = glob.glob('**/spectrum/*/TEK0000.CSV', recursive=True, root_dir=DATA_DIR)
+# csv_files_freq = glob.glob('**/spectrum/*/CH4.CSV', recursive=True, root_dir=DATA_DIR)
+csv_paths = [os.path.join(DATA_DIR, dir, 'TEK0000.CSV') for dir in dirs]
+csv_paths_freq = [os.path.join(DATA_DIR, dir, 'CH4.CSV') for dir in dirs]
 
 # get currents and scanning ranges
-currents = np.zeros(len(csv_files))
-ranges = np.zeros(len(csv_files))
-for i, path in enumerate(csv_files):
+currents = np.zeros(len(dirs))
+ranges = np.zeros(len(dirs))
+for i, path in enumerate(dirs):
     path = os.path.normpath(path).split(os.sep)
 
-    current_str = path[-4]
+    current_str = path[-3]
     current_str = current_str[:-3]  # remove 'amp'
     currents[i] = int(current_str)
 
-    scan_str = path[-2]
+    scan_str = path[-1]
     scan_str = scan_str[:-8]  # remove 'GHz_scan'
     scan_str = scan_str.replace('p', '.')
     ranges[i] = float(scan_str)
@@ -101,9 +102,10 @@ PLOTTING
 
 for i in range(len(dfs)):
     fit = all_fits[i]
-    date = os.path.normpath(csv_files[i]).split(os.path.sep)[0]
-    current = os.path.normpath(csv_files[i]).split(os.path.sep)[1]
-    scan = os.path.normpath(csv_files[i]).split(os.path.sep)[3]
+    split_path = os.path.normpath(dirs[i]).split(os.path.sep)
+    date = split_path[0]
+    current = split_path[1]
+    scan = split_path[3]
 
     plt.plot(all_freqs[i], all_trans[i],
              label='Data')
