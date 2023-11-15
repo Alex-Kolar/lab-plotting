@@ -36,12 +36,13 @@ PLOT_DECAY = True
 PLOT_ALL_SCANS = False  # plot all scans with background average
 PLOT_ALL_PEAKS = True  # plot all peak transmissions, with fitted double-decay exponential
 PLOT_ALL_AMPLITUDES = False  # plot all peaks minus minimum of transmission scan, with fitted double-decay
-PLOT_ALL_HEIGHTS = True  # plot all individually fitted hole heights, with fitted double-decay
+PLOT_ALL_HEIGHTS = False  # plot all individually fitted hole heights, with fitted double-decay
 PLOT_STACKED_SCANS = False  # plot all peak transmissions, with color gradient and with no t_wait offset
 PLOT_SINGLE_SCAN = False  # plot an individual oscilloscope scan (for troubleshooting)
 PLOT_SINGLE_SCAN_HOLES = False  # plot an individual transmission scan, with fitted hole shapes
-PLOT_LINEWIDTHS = True  # plot fitted linewidth of the hole transmission as a function of time
-PLOT_BASELINE = True  # plot fitted transmission baseline as a function of time
+PLOT_LINEWIDTHS = False  # plot fitted linewidth of the hole transmission as a function of time
+PLOT_BASELINE = False  # plot fitted transmission baseline as a function of time
+PLOT_AREA = True  # plot fitted area of hole as function of time
 
 
 def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
@@ -220,6 +221,8 @@ all_hole_background_error = []
 all_hole_centers = []
 all_hole_linewidth = []
 all_hole_error = []
+all_hole_areas = []
+all_hole_area_error = []
 for i, df in enumerate(dfs):
     print(f"\tFitting holes for scan {i+1}/{len(t_wait)}")
     hole_times = []
@@ -231,6 +234,8 @@ for i, df in enumerate(dfs):
     hole_centers = []
     linewidths = []
     errors = []
+    hole_area = []
+    hole_area_error = []
     for j, (start_idx, end_idx) in enumerate(zip(all_scan_edges[i][:-1],
                                                  all_scan_edges[i][1:])):
         time = df["Seconds"][start_idx:end_idx]
@@ -273,6 +278,9 @@ for i, df in enumerate(dfs):
         linewidths.append(width)
         errors.append(error)
 
+        hole_area.append(result_hole.params['amplitude'].value)
+        hole_area_error.append(result_hole.params['amplitude'].stderr)
+
     all_hole_times.append(hole_times)
     all_hole_results.append(hole_results)
     all_hole_amplitudes.append(hole_amplitudes)
@@ -282,6 +290,8 @@ for i, df in enumerate(dfs):
     all_hole_centers.append(hole_centers)
     all_hole_linewidth.append(linewidths)
     all_hole_error.append(errors)
+    all_hole_areas.append(hole_area)
+    all_hole_area_error.append(hole_area_error)
 
 print("")
 print("FIT REPORT (first hole fitting)")
@@ -309,6 +319,8 @@ all_background_error_combine = []
 all_centers_combine = []
 all_linewidth_combine = []
 all_error_combine = []
+all_area_combine = []
+all_area_error_combine = []
 # for i, (amps, amp_errs, centers, lw, err) in \
 #         enumerate(zip(all_hole_amplitudes, all_hole_amp_error,
 #                       all_hole_centers, all_hole_linewidth, all_hole_error)):
@@ -328,6 +340,8 @@ for i, df in enumerate(dfs):
     all_centers_combine += centers
     all_linewidth_combine += all_hole_linewidth[i]
     all_error_combine += all_hole_error[i]
+    all_area_combine += all_hole_areas[i]
+    all_area_error_combine += all_hole_area_error[i]
 
 
 # fit double exponential of hole height
@@ -613,6 +627,33 @@ if PLOT_BASELINE:
         ax.set_ylabel(r"$T_0$ (A.U.)")
     ax.grid('on')
     ax.legend()
+
+    plt.tight_layout()
+    plt.show()
+
+
+# for studying fitted hole area
+if PLOT_AREA:
+    fig, ax = plt.subplots()
+
+    ax.errorbar(all_centers_combine, all_area_combine,
+                yerr=all_hole_area_error,
+                capsize=10, marker='o', linestyle='', color='tab:red')
+    # ax.errorbar(all_centers_combine, all_linewidth_combine,
+    #             yerr=all_error_combine,
+    #             capsize=10, marker='o', linestyle='', color='tab:blue')
+    # ax2.plot(all_centers_combine, all_amplitudes_combine,
+    #          marker='o', linestyle='', color='tab:purple')
+    ax.set_xscale('log')
+
+    if LOG_SCALE:
+        title = "Hole Area (Log Scale) versus Time"
+    else:
+        title = "Hole Area versus Time"
+    ax.set_title(title)
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("Area (A.U.)")
+    ax.grid('on')
 
     plt.tight_layout()
     plt.show()
