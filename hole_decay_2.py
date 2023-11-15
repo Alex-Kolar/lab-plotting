@@ -314,9 +314,26 @@ print("")
 print("FIT REPORT (fitted peak height)")
 # print(result_fit_height.fit_report())
 
+# fit double exponential of hole area
+print("")
+print("Fitting hole area...")
+model_area = Model(decay_double)
+params = Parameters()
+params.add('amp_fast', value=0.4, min=0)
+params.add('amp_slow', value=0.1, min=0)
+params.add('tau_fast', value=0.005, min=0)
+params.add('tau_slow', value=10, min=0)
+params.add('offset', value=0)
+result_fit_area = model.fit(list(map(lambda x: x.params['amplitude'].value,
+                                     all_hole_results)),
+                            x=all_hole_centers,
+                            params=params)
+print("")
+print("FIT REPORT (fitted peak area)")
+print(result_fit_area.fit_report())
+
 # fit exponential decay of background T_0
 bg = list(map(lambda x: x.params['intercept'].value, all_hole_results))
-print(bg)
 print("")
 print("Fitting hole background decay...")
 model_bg = ExponentialModel() + ConstantModel()
@@ -619,6 +636,8 @@ if PLOT_AREA:
     ax.errorbar(all_hole_centers, list(map(get_area, all_hole_results)),
                 yerr=list(map(get_area_err, all_hole_results)),
                 capsize=10, marker='o', linestyle='', color='tab:red')
+    ax.plot(all_hole_centers, result_fit_area.best_fit,
+            '--k')
     ax.set_xscale('log')
 
     if LOG_SCALE:
