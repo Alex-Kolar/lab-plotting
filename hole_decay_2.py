@@ -207,35 +207,20 @@ print("")
 print("FIT REPORT (peak amplitude)")
 print(result_amp.fit_report())
 
+
 # do fitting of individual holes
 print("")
 print("Fitting individual holes...")
 # model = LorentzianModel() + LinearModel()
 model = VoigtModel() + LinearModel()
-all_hole_times = []
-all_hole_results = []
-all_hole_amplitudes = []
-all_hole_amp_error = []
-all_hole_background = []
-all_hole_background_error = []
-all_hole_centers = []
-all_hole_linewidth = []
-all_hole_error = []
-all_hole_areas = []
-all_hole_area_error = []
+all_hole_times_2d = []
+all_hole_centers_2d = []
+all_hole_results_2d = []
 for i, df in enumerate(dfs):
     print(f"\tFitting holes for scan {i+1}/{len(t_wait)}")
     hole_times = []
-    hole_results = []
-    hole_amplitudes = []
-    hole_amp_errors = []
-    hole_background = []
-    hole_background_errors = []
     hole_centers = []
-    linewidths = []
-    errors = []
-    hole_area = []
-    hole_area_error = []
+    hole_results = []
     for j, (start_idx, end_idx) in enumerate(zip(all_scan_edges[i][:-1],
                                                  all_scan_edges[i][1:])):
         time = df["Seconds"][start_idx:end_idx]
@@ -256,92 +241,61 @@ for i, df in enumerate(dfs):
                                     center=center_guess, sigma=sigma_guess)
         hole_results.append(result_hole)
 
-        # save specific details of fit
-        hole_amplitudes.append(result_hole.params['height'].value)
-        hole_amp_errors.append(result_hole.params['height'].stderr)
-        hole_background.append(result_hole.params['intercept'].value)
-        hole_background_errors.append(result_hole.params['intercept'].stderr)
         hole_centers.append(result_hole.params['center'].value)
 
-        # convert linewidth to frequency
-        width_time = result_hole.params['fwhm'].value  # unit: seconds
-        error_time = result_hole.params['fwhm'].stderr  # unit: seconds
-        scaling = SCAN_RANGE / (max(time) - min(time))
-        width = width_time * scaling  # unit: MHz
-        try:
-            error = error_time * scaling  # unit: MHz
-        except TypeError:
-            print("Failed to get hole params.")
-            print("Fit report:")
-            print(result_hole.fit_report())
-            # raise Exception()
-        linewidths.append(width)
-        errors.append(error)
+        # # convert linewidth to frequency
+        # width_time = result_hole.params['fwhm'].value  # unit: seconds
+        # error_time = result_hole.params['fwhm'].stderr  # unit: seconds
+        # scaling = SCAN_RANGE / (max(time) - min(time))
+        # width = width_time * scaling  # unit: MHz
+        # try:
+        #     error = error_time * scaling  # unit: MHz
+        # except TypeError:
+        #     print("Failed to get hole params.")
+        #     print("Fit report:")
+        #     print(result_hole.fit_report())
+        #     # raise Exception()
+        # linewidths.append(width)
+        # errors.append(error)
 
-        hole_area.append(result_hole.params['amplitude'].value)
-        hole_area_error.append(result_hole.params['amplitude'].stderr)
-
-    all_hole_times.append(hole_times)
-    all_hole_results.append(hole_results)
-    all_hole_amplitudes.append(hole_amplitudes)
-    all_hole_amp_error.append(hole_amp_errors)
-    all_hole_background.append(hole_background)
-    all_hole_background_error.append(hole_background_errors)
-    all_hole_centers.append(hole_centers)
-    all_hole_linewidth.append(linewidths)
-    all_hole_error.append(errors)
-    all_hole_areas.append(hole_area)
-    all_hole_area_error.append(hole_area_error)
+    all_hole_times_2d.append(hole_times)
+    all_hole_centers_2d.append(hole_centers)
+    all_hole_results_2d.append(hole_results)
 
 print("")
 print("FIT REPORT (first hole fitting)")
-print(all_hole_results[-1][0].fit_report())
+print(all_hole_results_2d[-1][0].fit_report())
 
-LINEWIDTHS_TO_PRINT = -1
-print("")
-print(f"Linewidths (FWHM) for t_wait = {t_wait[LINEWIDTHS_TO_PRINT]}")
-for i, (lw, err) in enumerate(zip(all_hole_linewidth[LINEWIDTHS_TO_PRINT],
-                                  all_hole_error[LINEWIDTHS_TO_PRINT])):
-    print(f"\t{i+1}: {lw} +/- {err} MHz")
+# LINEWIDTHS_TO_PRINT = -1
+# print("")
+# print(f"Linewidths (FWHM) for t_wait = {t_wait[LINEWIDTHS_TO_PRINT]}")
+# for i, (lw, err) in enumerate(zip(all_hole_linewidth[LINEWIDTHS_TO_PRINT],
+#                                   all_hole_error[LINEWIDTHS_TO_PRINT])):
+#     print(f"\t{i+1}: {lw} +/- {err} MHz")
+#
+# HEIGHTS_TO_PRINT = -7
+# print("")
+# print(f"Fitted heights for t_wait = {t_wait[HEIGHTS_TO_PRINT]}")
+# for i, (h, err) in enumerate(zip(all_hole_amplitudes[HEIGHTS_TO_PRINT],
+#                                   all_hole_amp_error[HEIGHTS_TO_PRINT])):
+#     print(f"\t{i+1}: {h} +/- {err} (A.U.)")
 
-HEIGHTS_TO_PRINT = -7
-print("")
-print(f"Fitted heights for t_wait = {t_wait[HEIGHTS_TO_PRINT]}")
-for i, (h, err) in enumerate(zip(all_hole_amplitudes[HEIGHTS_TO_PRINT],
-                                  all_hole_amp_error[HEIGHTS_TO_PRINT])):
-    print(f"\t{i+1}: {h} +/- {err} (A.U.)")
-
-# accumulate all hole data
-all_amplitudes_combine = []
-all_amp_error_combine = []
-all_background_combine = []
-all_background_error_combine = []
-all_centers_combine = []
-all_linewidth_combine = []
-all_error_combine = []
-all_area_combine = []
-all_area_error_combine = []
-# for i, (amps, amp_errs, centers, lw, err) in \
-#         enumerate(zip(all_hole_amplitudes, all_hole_amp_error,
-#                       all_hole_centers, all_hole_linewidth, all_hole_error)):
+# reshape all hole data
+all_hole_times = []
+all_hole_results = []
+all_hole_centers = []
 for i, df in enumerate(dfs):
     start_idx = all_starts[i]
     time_start = df["Seconds"][start_idx]
     # time += (t_wait[i]/1e3 - time[start_idx])  # add offset
-    centers = np.array(all_hole_centers[i])
+    centers = np.array(all_hole_centers_2d[i])
     centers -= time_start
     centers += (t_wait[i] / 1e3)
     centers = centers.tolist()
 
-    all_amplitudes_combine += all_hole_amplitudes[i]
-    all_amp_error_combine += all_hole_amp_error[i]
-    all_background_combine += all_hole_background[i]
-    all_background_error_combine += all_hole_background_error[i]
-    all_centers_combine += centers
-    all_linewidth_combine += all_hole_linewidth[i]
-    all_error_combine += all_hole_error[i]
-    all_area_combine += all_hole_areas[i]
-    all_area_error_combine += all_hole_area_error[i]
+    all_hole_times += all_hole_times_2d[i]
+    all_hole_results += all_hole_results_2d[i]
+    all_hole_centers += centers
 
 
 # fit double exponential of hole height
@@ -361,10 +315,12 @@ print("FIT REPORT (fitted peak height)")
 # print(result_fit_height.fit_report())
 
 # fit exponential decay of background T_0
+bg = list(map(lambda x: x.params['intercept'].value, all_hole_results))
+print(bg)
 print("")
 print("Fitting hole background decay...")
 model_bg = ExponentialModel() + ConstantModel()
-result_bg = model_bg.fit(all_background_combine, x=all_centers_combine)
+result_bg = model_bg.fit(bg, x=all_hole_centers)
 print("")
 print("FIT REPORT (background decay)")
 print(result_bg.fit_report())
@@ -474,8 +430,14 @@ if PLOT_ALL_HEIGHTS:
     color = 'tab:purple'
     fig, ax = plt.subplots()
 
-    ax.errorbar(all_centers_combine, all_amplitudes_combine,
-                yerr=all_amp_error_combine,
+    def get_height(x):
+        return x.params['height'].value
+
+    def get_height_err(x):
+        return x.params['height'].stderr
+
+    ax.errorbar(all_hole_centers, map(get_height, all_hole_results),
+                yerr=map(get_height_err, all_hole_results),
                 capsize=10, marker='o', linestyle='', color=color)
     # plt.semilogy(all_centers_combine, result_fit_height.best_fit,
     #              'k--', label='Fit')
@@ -587,8 +549,14 @@ if PLOT_SINGLE_SCAN_HOLES:
 if PLOT_LINEWIDTHS:
     fig, ax = plt.subplots()
 
-    ax.errorbar(all_centers_combine, all_linewidth_combine,
-                yerr=all_error_combine,
+    def get_linewidth(x):
+        return x.params['FWHM'].value
+
+    def get_linewidth_err(x):
+        return x.params['FWHM'].stderr
+
+    ax.errorbar(all_hole_centers, map(get_linewidth, all_hole_results),
+                yerr=map(get_linewidth_err, all_hole_results),
                 capsize=10, marker='o', linestyle='', color='tab:blue')
     # ax2.plot(all_centers_combine, all_amplitudes_combine,
     #          marker='o', linestyle='', color='tab:purple')
@@ -611,11 +579,17 @@ if PLOT_LINEWIDTHS:
 if PLOT_BASELINE:
     fig, ax = plt.subplots()
 
-    ax.errorbar(all_centers_combine, all_background_combine,
-                yerr=all_background_error_combine,
+    def get_bg(x):
+        return x.params['intercept'].value
+
+    def get_bg_err(x):
+        return x.params['intercept'].stderr
+
+    ax.errorbar(all_hole_centers, map(get_bg, all_hole_results),
+                yerr=map(get_bg_err, all_hole_results),
                 capsize=10, marker='o', linestyle='', color='tab:orange',
                 label='Data')
-    ax.plot(all_centers_combine, result_bg.best_fit,
+    ax.plot(all_hole_centers, result_bg.best_fit,
             'k--', label='Fit')
     ax.set_xscale('log')
 
@@ -636,14 +610,15 @@ if PLOT_BASELINE:
 if PLOT_AREA:
     fig, ax = plt.subplots()
 
-    ax.errorbar(all_centers_combine, all_area_combine,
-                yerr=all_hole_area_error,
+    def get_area(x):
+        return x.params['amplitude'].value
+
+    def get_area_err(x):
+        return x.params['amplitude'].stderr
+
+    ax.errorbar(all_hole_centers, list(map(get_area, all_hole_results)),
+                yerr=list(map(get_area_err, all_hole_results)),
                 capsize=10, marker='o', linestyle='', color='tab:red')
-    # ax.errorbar(all_centers_combine, all_linewidth_combine,
-    #             yerr=all_error_combine,
-    #             capsize=10, marker='o', linestyle='', color='tab:blue')
-    # ax2.plot(all_centers_combine, all_amplitudes_combine,
-    #          marker='o', linestyle='', color='tab:purple')
     ax.set_xscale('log')
 
     if LOG_SCALE:
