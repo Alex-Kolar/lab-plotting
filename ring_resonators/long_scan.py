@@ -8,11 +8,14 @@ from lmfit.models import BreitWignerModel, ConstantModel
 
 
 DATA_DIR = "/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators" \
-           "/Planarized_device/long_scan_11132023"
+           "/Planarized_device/long_scan_11142023"
 
 # data taken for frequency
-F_RANGE = 30.623  # units: GHz
-F_CENTER = [195058, 195083, 195108, 195133, 195158, 195183, 195208, 195233, 195258, 195033, 195008, 194983, 194958, 194933, 194908, 194883, 194858]
+# F_RANGE = 30.623  # units: GHz
+# F_CENTER = [195058, 195083, 195108, 195133, 195158, 195183, 195208, 195233, 195258, 195033, 195008, 194983, 194958, 194933, 194908, 194883, 194858]
+F_RANGE = 30.5  # units: GHz
+F_CENTER = [195058, 195258, 195283, 195308, 195333, 195358, 195383, 195408, 195433, 195458, 195542, 195692]
+
 
 # fitting parameters
 THRESHOLD = 0.06
@@ -25,7 +28,7 @@ figsize = (18, 6)
 
 # plotting output control
 PLOT_COMBINED = True
-PLOT_INDIVIDUAL = False
+PLOT_INDIVIDUAL = True
 
 
 # locate all files
@@ -34,7 +37,7 @@ csv_paths = [os.path.join(DATA_DIR, file) for file in csv_files]
 
 # sort all files and get scan number
 csv_paths = sorted(csv_paths)
-dfs = [pd.read_csv(path, header=5) for path in csv_paths]
+dfs = [pd.read_csv(path, header=1) for path in csv_paths]
 
 # truncate data based on frequency scan
 all_freq = []
