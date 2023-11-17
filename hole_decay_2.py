@@ -40,7 +40,7 @@ PLOT_ALL_HEIGHTS = False  # plot all individually fitted hole heights, with fitt
 PLOT_STACKED_SCANS = False  # plot all peak transmissions, with color gradient and with no t_wait offset
 PLOT_SINGLE_SCAN = False  # plot an individual oscilloscope scan (for troubleshooting)
 PLOT_SINGLE_SCAN_HOLES = False  # plot an individual transmission scan, with fitted hole shapes
-PLOT_LINEWIDTHS = False  # plot fitted linewidth of the hole transmission as a function of time
+PLOT_LINEWIDTHS = True  # plot fitted linewidth of the hole transmission as a function of time
 PLOT_BASELINE = False  # plot fitted transmission baseline as a function of time
 PLOT_AREA = True  # plot fitted area of hole as function of time
 
@@ -566,14 +566,27 @@ if PLOT_SINGLE_SCAN_HOLES:
 if PLOT_LINEWIDTHS:
     fig, ax = plt.subplots()
 
-    def get_linewidth(x):
-        return x.params['FWHM'].value
+    def get_linewidth(x, time):
+        width_time = x.params['fwhm'].value  # unit: seconds
 
-    def get_linewidth_err(x):
-        return x.params['FWHM'].stderr
+        # convert linewidth to frequency
+        scaling = SCAN_RANGE / (max(time) - min(time))
+        width = width_time * scaling  # unit: MHz
 
-    ax.errorbar(all_hole_centers, map(get_linewidth, all_hole_results),
-                yerr=map(get_linewidth_err, all_hole_results),
+        return width
+
+    def get_linewidth_err(x, time):
+        error_time = x.params['fwhm'].stderr  # unit: seconds
+
+        # convert to frequency
+        scaling = SCAN_RANGE / (max(time) - min(time))
+        error = error_time * scaling  # unit: MHz
+
+        return error
+
+    ax.errorbar(all_hole_centers,
+                list(map(get_linewidth, all_hole_results, all_hole_times)),
+                yerr=list(map(get_linewidth_err, all_hole_results, all_hole_times)),
                 capsize=10, marker='o', linestyle='', color='tab:blue')
     # ax2.plot(all_centers_combine, all_amplitudes_combine,
     #          marker='o', linestyle='', color='tab:purple')
