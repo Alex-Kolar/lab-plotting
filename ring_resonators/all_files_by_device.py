@@ -8,19 +8,21 @@ from lmfit.models import BreitWignerModel, LinearModel
 
 
 DATA_DIR = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators"
-            "/Planarized_device/cold_scan_12072023/")
+            "/Planarized_device/warmup_12122023/PRESSURE")
+OUTPUT_DIR = ("/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs/ring_resonators"
+              "/planarized/warmup_12122023/pressure")
 SCAN_RANGE = 2  # unit: GHz
 
 # plotting params
 mpl.rcParams.update({'font.sans-serif': 'Helvetica',
                      'font.size': 12})
-color = 'cornflowerblue'
+color = 'mediumpurple'
 
-PlOT_ALL_RES = False
+PlOT_ALL_RES = True
 
 
 # find files and sort by device
-filenames = glob.glob('*.csv', recursive=True, root_dir=DATA_DIR)
+filenames = glob.glob('*.csv', root_dir=DATA_DIR)
 device_numbers = [int(fn[1:3]) for fn in filenames]
 device_set = set(device_numbers)
 filenames_dict = {device: [] for device in device_set}
@@ -73,8 +75,12 @@ for device in device_set:
         all_q.append(q)
 
         if PlOT_ALL_RES:
-            plt.plot(freq, transmission)
+            plt.plot(freq, transmission, color=color)
             plt.plot(freq, out.best_fit, 'k--')
+
+            plt.text(out.params["center"].value + 100,
+                     min(transmission),
+                     f"Q: {q:.3}")
 
             plt.title(f"Device {device} {wl} nm scan")
             plt.xlabel("Detuning (MHz)")
@@ -82,7 +88,12 @@ for device in device_set:
             plt.grid(True)
 
             plt.tight_layout()
-            plt.show()
+
+            save_name = f"D{device}_{wl}"
+            save_name = save_name.replace(".", "_")
+            save_name += ".png"
+            plt.savefig(os.path.join(OUTPUT_DIR, save_name))
+            plt.clf()
 
     q_max.append(max(all_q))
 
