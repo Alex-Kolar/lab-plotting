@@ -8,10 +8,9 @@ from lmfit.models import GaussianModel, ConstantModel
 
 
 DATA_DIR = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab"
-            "/Lab data/Er YVO Holeburning/aom/cascaded_AOMs/112ns_offset")
-OUTPUT_DIR = "/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs/aom_fitting/112ns_offset"
-FILES_IGNORE = ["30ns/NewFile1.csv",
-                "30ns/NewFile2.csv"]
+            "/Lab data/Er YVO Holeburning/aom/cascaded_AOMs/offset_tuning_30nswidth")
+OUTPUT_DIR = "/output_figs/aom_fitting/offset_tuning_30nswidth"
+FILES_IGNORE = []
 GAIN = 700  # units: V/W
 
 # plotting parameters
@@ -23,7 +22,7 @@ mpl.rcParams.update({'font.size': 12,
 filenames = glob.glob('**/*.csv', root_dir=DATA_DIR, recursive=True)
 for file in FILES_IGNORE:
     filenames.remove(file)
-desired_pulse_width = [os.path.split(filename)[0] for filename in filenames]
+pulse_separation = [os.path.split(filename)[0] for filename in filenames]
 paths = [os.path.join(DATA_DIR, filename) for filename in filenames]
 
 dfs = [pd.read_csv(path, skiprows=[1]) for path in paths]
@@ -84,7 +83,7 @@ for i, df in enumerate(dfs):
     res_str += rf"AOM FWHM: {aom_lw:0.3} $\pm$ {aom_err:0.3} ns"
     ax.text(200, 0, res_str)
 
-    ax.set_title(f"{desired_pulse_width[i]} pulse width")
+    ax.set_title(f"{pulse_separation[i]} pulse separation")
     ax.set_xlabel("Time (ns)")
     ax.set_ylabel("HDAWG Voltage (V)")
     ax1.set_ylabel("Optical Output Power (mW)")
@@ -93,17 +92,12 @@ for i, df in enumerate(dfs):
     plt.legend()
 
     plt.tight_layout()
-    output_filename = os.path.join(OUTPUT_DIR, f"{desired_pulse_width[i]}.png")
+    output_filename = os.path.join(OUTPUT_DIR, f"{pulse_separation[i]}.png")
     plt.savefig(output_filename)
     plt.clf()
 
-# plot of size versus width
-def get_area(x):
-    return x.params['amplitude'].value
 
-def get_area_err(x):
-    return x.params['amplitude'].stderr
-
+# plot of height versus separation (and lw)
 def get_height(x):
     return x.params['height'].value
 
@@ -118,55 +112,30 @@ def get_lw_err(x):
 
 
 widths = list(map(get_lw, aom_fits))
-# width_err = list(map(get_lw_err, aom_fits))
+width_err = list(map(get_lw_err, aom_fits))
 heights = list(map(get_height, aom_fits))
-# height_err = list(map(get_height_err, aom_fits))
-areas = list(map(get_area, aom_fits))
-
+height_err = list(map(get_height_err, aom_fits))
+pulse_separation_int = [int(sep[:-2]) for sep in pulse_separation]  # remove 'ns'
 
 # plot both on same graph
 fig, ax = plt.subplots()
 ax1 = ax.twinx()
 
 color_height = 'tab:blue'
-color_area = 'tab:orange'
+color_width = 'tab:orange'
 
-# ax.errorbar(widths, heights, xerr=width_err, yerr=height_err,
-#             ls='', marker='')
-ax.loglog(widths, heights, 'o', color=color_height)
-ax1.loglog(widths, areas, 'o', color=color_area)
+ax.errorbar(pulse_separation_int, heights, yerr=height_err,
+            ls='', marker='o', color=color_height)
+# ax.plot(pulse_separation_int, heights, 'o', color=color_height)
+ax1.errorbar(pulse_separation_int, widths, yerr=width_err,
+             ls='', marker='o', color=color_width)
+# ax1.plot(pulse_separation_int, widths, 'o', color=color_width)
 
-ax.set_xlabel("Optical FWHM (ns)")
+ax.set_xlabel("Pulse Separation (ns)")
 ax.set_ylabel("Height (mW)", color=color_height)
-ax1.set_ylabel("Area (mW * ns)", color=color_area)
+ax1.set_ylabel("Optical FWHM (ns)", color=color_width)
 ax.tick_params(axis='y', colors=color_height)
-ax1.tick_params(axis='y', colors=color_area)
-ax.grid(True)
-
-fig.tight_layout()
-fig.show()
-
-
-# plot only heights
-fig, ax = plt.subplots()
-
-ax.plot(widths, heights, 'o', color='tab:blue')
-
-ax.set_xlabel("Optical FWHM (ns)")
-ax.set_ylabel("Height (mW)")
-ax.grid(True)
-
-fig.tight_layout()
-fig.show()
-
-
-# plot only areas
-fig, ax = plt.subplots()
-
-ax.plot(widths, areas, 'o', color='tab:orange')
-
-ax.set_xlabel("Optical FWHM (ns)")
-ax.set_ylabel("Area (mW * ns)")
+ax1.tick_params(axis='y', colors=color_width)
 ax.grid(True)
 
 fig.tight_layout()
