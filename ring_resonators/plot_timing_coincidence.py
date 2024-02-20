@@ -3,22 +3,26 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from lmfit.models import LorentzianModel, ConstantModel
+from scipy import fft
 
 
 FILENAME = "/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators" \
-           "/Coincidence Count Measurement/08022023/Correlation-2_2023-08-03_14-43-39_(30sec_int).txt"
-FITTING = True  # add a gaussian fit
+           "/Original_device/Coincidence Count Measurement/08022023/Correlation-2_2023-08-03_14-41-25_(30sec_int).txt"
+FITTING = False  # add a gaussian fit
 WAVELENGTH = 1537.782  # units: nm
+SAVE_FILE = True
+OUTPUT_PATH = "/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs/ring_resonators/original/coincidence_1ns.svg"
 
 # plotting params
-mpl.rcParams.update({'font.sans-serif': 'Helvetica',
+mpl.rcParams.update({'font.sans-serif': 'Arial',
                      'font.size': 12})
-xlim = (-7, 7)
-color = 'coral'
+xlim = (-50, 50)
+color = 'cornflowerblue'
 
 # NOTE: first line of csv needs extra tab added
 # otherwise the columns will not be read properly
 df = pd.read_csv(FILENAME, sep='\t')
+print(df)
 coincidence = df["Counts"]
 time = df["Time(ps)"]  # unit: ps
 time *= 1e-3  # unit: ns
@@ -35,6 +39,7 @@ if FITTING:
 
     sigma = res.params['sigma'].value
     sigma_single = sigma/np.sqrt(2)
+    fwhm_single = 2*sigma_single
 
 
 # plotting
@@ -43,11 +48,11 @@ fig, ax = plt.subplots()
 ax.bar(time, coincidence, width=time_diff, color=color)
 if FITTING:
     ax.plot(time, res.best_fit, 'k--')
-    label = r"$\sigma$: {:0.3f} $\pm$ {:0.3f} ns".format(
-        res.params['sigma'].value, res.params['sigma'].stderr)
+    label = r"FWHM: {:0.3f} $\pm$ {:0.3f} ns".format(
+        2*res.params['sigma'].value, 2*res.params['sigma'].stderr)
     label += "\n"
-    label += r"$\sigma$ (single): {:0.3f} ns".format(
-        sigma_single)
+    label += r"FWHM (single): {:0.3f} ns".format(
+        fwhm_single)
     t = ax.text(0.05, 0.95, label,
                 horizontalalignment='left', verticalalignment='top')
     t.set_transform(ax.transAxes)
@@ -55,9 +60,13 @@ if FITTING:
 ax.set_xlim(xlim)
 ax.set_xlabel("Timing Offset (ns)")
 ax.set_ylabel("Coincidence Counts")
+ax.set_title("1 ns Bin Width")
 
 fig.tight_layout()
-fig.show()
+if SAVE_FILE:
+    fig.savefig(OUTPUT_PATH)
+else:
+    fig.show()
 
 if FITTING:
     spec_line = 1 / ((sigma_single * 1e-9) * 2 * np.pi)  # unit: Hz
