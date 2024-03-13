@@ -11,23 +11,24 @@ import warnings
 
 # for data
 DATA_DIR = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Er YVO SHB & AFC"
-            "/01_31_24/burnprobe_fm/trippleburn_persistent_deltaf_0p03/changing_pump_time"
-            "/N_pump/probe_scan_500mhz")
+            "/02_07_24/burnprobe/6amp_Bfield/changing_a_pump/0.4 (~1.5uW)/changing_N_pump/probe_AOM_scan_49p5mhz")
+BG_DIR = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Er YVO SHB & AFC"
+          "/02_07_24/burnprobe/6amp_Bfield/changing_a_pump/bg_transmissionlevel_laseroffres")
 TEK_HEADER = ["ParamLabel", "ParamVal", "None", "Seconds", "Volts", "None2"]  # hard-coded from TEK oscilloscope
-SCAN_RANGE = 500  # Unit: MHz
+SCAN_RANGE = 49.5  # Unit: MHz
 SCAN_TIME = 0.0064  # Unit: s
 GAIN = 1e8  # Unit: V/W
-PUMP_TIME = 27.136  # Unit: ms (total time = N_pump * pump_time)
+PUMP_TIME = 25.6  # Unit: ms (total time = N_pump * pump_time)
 
 EDGE_THRESH = 1
 
 # plotting params
 CMAP_OFFSET = 0.3
-CMAP = cm.Reds
-max_low_plot = round(np.log10(3), 2)  # for low amplitude pumps
-ylim = (0, 45)
-PLOT_OD = False  # plot as optical depth
-LOG_CMAP = True  # use log scale for colormap
+CMAP = cm.Blues
+max_low_plot = 2  # for low amplitude pumps
+ylim = (0, 5)
+PLOT_OD = True  # plot as optical depth
+LOG_CMAP = False  # use log scale for colormap
 
 
 def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
@@ -87,8 +88,16 @@ csv_paths_freq = [path for _, path in sorted(zip(pump_times, csv_paths_freq))]
 pump_times.sort()
 
 # read csvs
+print("Reading files...")
 dfs = [pd.read_csv(path, names=TEK_HEADER) for path in csv_paths]
 dfs_freq = [pd.read_csv(path, names=TEK_HEADER) for path in csv_paths_freq]
+
+# locate background file
+bg_file = os.path.join(BG_DIR, "TEK0000.CSV")
+bg_file_freq = os.path.join(BG_DIR, "TEK0001.CSV")
+print("Reading background file...")
+df_bg = pd.read_csv(bg_file, names=TEK_HEADER)
+df_bg_freq = pd.read_csv(bg_file_freq, names=TEK_HEADER)
 
 
 """
@@ -97,6 +106,28 @@ DATA PROCESSING
 
 print("Gathering transmission peaks and background...")
 
+# gather background data
+# falling edge case
+if df_bg_freq["Volts"].iloc[-1] < df_bg_freq["Volts"][0]:
+    scan_edge = [idx for idx in range(1, len(df_bg_freq["Volts"]))
+                 if df_bg_freq["Volts"][idx] - df_bg_freq["Volts"][idx-1] < -EDGE_THRESH]
+else:
+    scan_edge = [idx for idx in range(1, len(df_bg_freq["Volts"]))
+                 if df_bg_freq["Volts"][idx] - df_bg_freq["Volts"][idx - 1] > EDGE_THRESH]
+if len(scan_edge) > 1:
+    warnings.warn("Multiple scan edges found for background, defaulting to first.")
+center_idx = scan_edge[0]
+time_arr = df_bg_freq["Seconds"]
+center_time = time_arr[center_idx]
+start_time = np.round(center_time - 0.5*SCAN_TIME, 6)
+stop_time = np.round(center_time + 0.5 * SCAN_TIME, 6)
+
+start_idx = np.where(time_arr == start_time)[0][0]
+stop_idx = np.where(time_arr == stop_time)[0][0]
+bg_transmission = df_bg["Volts"][start_idx:stop_idx]
+bg_transmission = (bg_transmission / GAIN) * 1e9  # convert to nW
+
+
 # read starting times, peaks, and single scan
 all_scan_midpoints = []  # note: this is the INDEX of the step in the array
 all_scan_start = []
@@ -104,7 +135,6 @@ all_scan_stop = []
 all_scan_transmission = []
 all_scan_od = []
 all_scan_freq = []
-max_trans = 0
 for df, df_freq in zip(dfs, dfs_freq):
     # falling edge case
     if df_freq["Volts"].iloc[-1] < df_freq["Volts"][0]:
@@ -134,11 +164,17 @@ for df, df_freq in zip(dfs, dfs_freq):
     freq = np.linspace(-SCAN_RANGE/2, SCAN_RANGE/2, stop_idx-start_idx)
     all_scan_freq.append(freq)
 
-    max_trans = max(max_trans, max(transmission))
+    # max_trans = max(max_trans, max(transmission))
+
+# # collect background frequency for transmission
+# # for now, just use max
+# max_trans = max(bg_transmission)
+# max_trans = (max_trans / GAIN) * 1e9  # convert to nW
+# print(f"Background level: {max_trans} nW")
 
 for trans in all_scan_transmission:
     trans_arr = np.array(trans)
-    all_scan_od.append(np.log(max_trans / trans_arr))
+    all_scan_od.append(np.log(bg_transmission / trans_arr))
 
 
 """
@@ -208,9 +244,5 @@ if LOG_CMAP:
     cb.set_label("Log Pump Duration T_pump (s)")
 else:
     cb.set_label("Pump Duration T_pump (s)")
-# axcb = fig.colorbar(line_coll_low, ax=ax1)
-# axcb.set_label("Pump Amplitude")
-# axcb = fig.colorbar(line_coll_high, ax=ax2)
-# axcb.set_label("Pump Amplitude")
 
 plt.show()
