@@ -13,7 +13,7 @@ from matplotlib.collections import LineCollection
 
 # for data
 DATA_DIR = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Er YVO SHB & AFC"
-            "/02_07_24/burnprobe/6amp_Bfield/changing_a_pump/0.4 (~1.5uW)/changing_N_pump/probe_AOM_scan_49p5mhz")
+            "/02_07_24/burnprobe/6amp_Bfield/changing_a_pump/1 (~200uW)/changing_N_pump/probe_AOM_scan_49p5mhz")
 BG_DIR = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Er YVO SHB & AFC"
           "/02_07_24/burnprobe/6amp_Bfield/changing_a_pump/bg_transmissionlevel_laseroffres")
 TEK_HEADER = ["ParamLabel", "ParamVal", "None", "Seconds", "Volts", "None2"]  # hard-coded from TEK oscilloscope
@@ -29,12 +29,13 @@ EDGE_THRESH = 1  # For finding rising/falling edge of oscilloscope trigger
 mpl.rcParams.update({'font.size': 12,
                      'figure.figsize': (8, 6)})
 OUTPUT_DIR = ("/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs/aom_holeburning"
-              "/02_07_2024/comb_time_scan/0p4_fit_testing")
+              "/02_07_2024/comb_time_scan/fit_testing")
 
 # # plotting output control
 PLOT_ALL_SCANS = True  # plot all scans with fit
 PLOT_ALL_HEIGHTS = True  # plot all individually fitted hole heights
 PLOT_LINEWIDTHS = True  # plot fitted linewidth of the hole transmission as a function of time
+PLOT_BG_LINEWIDTHS = True  # plot fitted linewidth of the background as a function of time
 # PLOT_BASELINE = False  # plot fitted transmission baseline as a function of time
 # PLOT_AREA = True  # plot fitted area of hole as function of time
 
@@ -160,11 +161,12 @@ for trans in all_scan_transmission:
 
 # do fitting of individual holes
 print("Fitting individual holes...")
-model = VoigtModel(prefix='bg_') - VoigtModel(prefix='hole_') + LinearModel()
+
 all_hole_results = []
 for i, (freq, od) in enumerate(zip(all_scan_freq, all_scan_od)):
     print(f"\tFitting holes for scan {i+1}/{len(pump_times)}")
-    hole_results = []
+
+    model = VoigtModel(prefix='bg_') - VoigtModel(prefix='hole_') + LinearModel()
 
     # old guesses
     # hole_sigma_guess = 5
@@ -249,12 +251,26 @@ if PLOT_ALL_SCANS:
 
     for i, (freq, od) in enumerate(zip(all_scan_freq, all_scan_od)):
         time = round(pump_times[i], 3)
+        res = all_hole_results[i]
 
         plt.plot(freq, od, color=color, label="Data")
-        plt.plot(freq, all_hole_results[i].init_fit,
-                 '--r', label="Initial Guess")
-        plt.plot(freq, all_hole_results[i].best_fit,
-                 '--k', label='Fit')
+        plt.plot(freq, res.init_fit, '--r', label="Initial Guess")
+        plt.plot(freq, res.best_fit, '--k', label='Fit')
+
+        # construct background only data (no hole)
+        slope = res.params["slope"]
+        intercept = res.params["intercept"]
+        amplitude = res.params["bg_amplitude"]
+        center = res.params["bg_center"]
+        sigma = res.params["bg_sigma"]
+        gamma = res.params["bg_gamma"]
+
+        bg_model = LinearModel() + VoigtModel()
+        y_vals = bg_model.eval(x=freq,
+                               slope=slope, intercept=intercept,
+                               amplitude=amplitude, center=center,
+                               sigma=sigma, gamma=gamma)
+        plt.plot(freq, y_vals, '--g', label="Background Only")
 
         plt.xlim((-SCAN_RANGE/2, SCAN_RANGE/2))
         plt.title(f"Fitted Hole, T_pump = {time}")
@@ -319,6 +335,35 @@ if PLOT_LINEWIDTHS:
     ax.set_xscale('log')
 
     ax.set_title("Hole Linewidth (FWHM) versus Time")
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("Linewidth (MHz)")
+    ax.grid(True)
+    ax.set_xscale('log')
+    ax.set_ylim((0, 20))
+
+    plt.tight_layout()
+    plt.show()
+
+
+# for studying fitted hole width
+if PLOT_BG_LINEWIDTHS:
+    fig, ax = plt.subplots()
+
+    def get_linewidth(x):
+        width = x.params['bg_sigma'].value  # unit: MHz
+        return width
+
+    def get_linewidth_err(x):
+        error = x.params['bg_sigma'].stderr  # unit: MHz
+        return error
+
+    ax.errorbar(pump_times,
+                list(map(get_linewidth, all_hole_results)),
+                yerr=list(map(get_linewidth_err, all_hole_results)),
+                capsize=10, marker='o', linestyle='', color='tab:orange')
+    ax.set_xscale('log')
+
+    ax.set_title("Background Linewidth (Sigma) versus Time")
     ax.set_xlabel("Time (s)")
     ax.set_ylabel("Linewidth (MHz)")
     ax.grid(True)
