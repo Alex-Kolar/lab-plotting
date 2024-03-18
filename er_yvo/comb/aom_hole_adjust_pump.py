@@ -39,7 +39,7 @@ PLOT_ALL_SCANS = True  # plot all scans with fit
 PLOT_ALL_HEIGHTS = True  # plot all individually fitted hole heights
 PLOT_LINEWIDTHS = True  # plot fitted linewidth of the hole transmission as a function of time
 PLOT_BG_LINEWIDTHS = False  # plot fitted linewidth of the background as a function of time
-# PLOT_BASELINE = False  # plot fitted transmission baseline as a function of time
+PLOT_BASELINE = True  # plot fitted transmission baseline (background) as a function of time
 # PLOT_AREA = True  # plot fitted area of hole as function of time
 
 
@@ -330,11 +330,11 @@ if PLOT_ALL_HEIGHTS:
                 yerr=list(map(get_height_err, all_hole_results)),
                 capsize=10, marker='o', linestyle='', color=color)
     ax.axvline(LINEAR_BG_THRESH, ls='--', color='k')
+    ax.set_xscale('log')
 
     ax.set_title("Hole Height Decay")
     ax.set_xlabel("Pump Time (s)")
     ax.set_ylabel("Hole Height Fit (OD)")
-    ax.set_xscale('log')
     ax.grid(True)
     ax.set_ylim((0, 0.5))
 
@@ -365,7 +365,6 @@ if PLOT_LINEWIDTHS:
     ax.set_xlabel("Time (s)")
     ax.set_ylabel("Linewidth (MHz)")
     ax.grid(True)
-    ax.set_xscale('log')
     ax.set_ylim((0, 15))
 
     plt.tight_layout()
@@ -388,50 +387,59 @@ if PLOT_BG_LINEWIDTHS:
                 list(map(get_linewidth, all_hole_results)),
                 yerr=list(map(get_linewidth_err, all_hole_results)),
                 capsize=10, marker='o', linestyle='', color='tab:orange')
+    ax.axvline(LINEAR_BG_THRESH, ls='--', color='k')
     ax.set_xscale('log')
 
     ax.set_title("Background Linewidth (Sigma) versus Time")
     ax.set_xlabel("Time (s)")
     ax.set_ylabel("Linewidth (MHz)")
     ax.grid(True)
-    ax.set_xscale('log')
     ax.set_ylim((0, 20))
 
     plt.tight_layout()
     plt.show()
 
 
-# # for studying fitted hole baseline
-# if PLOT_BASELINE:
-#     fig, ax = plt.subplots()
-#
-#     def get_bg(x):
-#         return x.params['intercept'].value
-#
-#     def get_bg_err(x):
-#         return x.params['intercept'].stderr
-#
-#     ax.errorbar(all_hole_centers, map(get_bg, all_hole_results),
-#                 yerr=map(get_bg_err, all_hole_results),
-#                 capsize=10, marker='o', linestyle='', color='tab:orange',
-#                 label='Data')
-#     ax.plot(all_hole_centers, result_bg.best_fit,
-#             'k--', label='Fit')
-#     ax.set_xscale('log')
-#
-#     ax.set_title("Hole Transmission Background versus Time")
-#     ax.set_xlabel("Time (s)")
-#     if LOG_SCALE:
-#         ax.set_ylabel(r"$\log(T_0)$ (A.U.)")
-#     else:
-#         ax.set_ylabel(r"$T_0$ (A.U.)")
-#     ax.grid('on')
-#     ax.legend()
-#
-#     plt.tight_layout()
-#     plt.show()
-#
-#
+# for studying fitted hole baseline
+if PLOT_BASELINE:
+    fig, ax = plt.subplots()
+
+    def get_bg(x):
+        res, time = x
+        if time > LINEAR_BG_THRESH:
+            return res.params['intercept'].value
+        else:
+            line = res.params['intercept'].value
+            voigt = res.params['bg_height'].value
+            return line + voigt
+
+    def get_bg_err(x):
+        res, time = x
+        if time > LINEAR_BG_THRESH:
+            return res.params['intercept'].stderr
+        else:
+            line_err = res.params['intercept'].stderr
+            voigt_err = res.params['bg_height'].stderr
+            total = np.sqrt((line_err ** 2) + (voigt_err ** 2))
+            return total
+
+    ax.errorbar(pump_times, list(map(get_bg, zip(all_hole_results, pump_times))),
+                yerr=list(map(get_bg_err, zip(all_hole_results, pump_times))),
+                capsize=10, marker='o', linestyle='', color='tab:orange',
+                label='Data')
+    ax.axvline(LINEAR_BG_THRESH, ls='--', color='k')
+    ax.set_xscale('log')
+
+    ax.set_title("Hole Transmission Background versus Time")
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel(r"Background (OD)")
+    ax.grid(True)
+    ax.set_ylim((0, 2.5))
+
+    plt.tight_layout()
+    plt.show()
+
+
 # # for studying fitted hole area
 # if PLOT_AREA:
 #     fig, ax = plt.subplots()
