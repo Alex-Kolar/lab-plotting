@@ -24,6 +24,9 @@ PUMP_TIME = 25.6  # Unit: ms (total pump time = N_pump * pump_time)
 
 EDGE_THRESH = 1  # For finding rising/falling edge of oscilloscope trigger
 
+# for fitting
+LINEAR_BG_THRESH = 0.2  # All pump times beyond this will use only a linear background (no Voigt)
+
 # for plotting
 # plotting parameters
 mpl.rcParams.update({'font.size': 12,
@@ -35,7 +38,7 @@ OUTPUT_DIR = ("/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs/aom_holebur
 PLOT_ALL_SCANS = True  # plot all scans with fit
 PLOT_ALL_HEIGHTS = True  # plot all individually fitted hole heights
 PLOT_LINEWIDTHS = True  # plot fitted linewidth of the hole transmission as a function of time
-PLOT_BG_LINEWIDTHS = True  # plot fitted linewidth of the background as a function of time
+PLOT_BG_LINEWIDTHS = False  # plot fitted linewidth of the background as a function of time
 # PLOT_BASELINE = False  # plot fitted transmission baseline as a function of time
 # PLOT_AREA = True  # plot fitted area of hole as function of time
 
@@ -166,7 +169,11 @@ all_hole_results = []
 for i, (freq, od) in enumerate(zip(all_scan_freq, all_scan_od)):
     print(f"\tFitting holes for scan {i+1}/{len(pump_times)}")
 
-    model = VoigtModel(prefix='bg_') - VoigtModel(prefix='hole_') + LinearModel()
+    time = pump_times[i]
+    if time > LINEAR_BG_THRESH:
+        model = LinearModel() - VoigtModel(prefix='hole_')
+    else:
+        model = VoigtModel(prefix='bg_') + LinearModel() - VoigtModel(prefix='hole_')
 
     # old guesses
     # hole_sigma_guess = 5
@@ -177,18 +184,22 @@ for i, (freq, od) in enumerate(zip(all_scan_freq, all_scan_od)):
     # intercept_guess = 3 * np.exp(-1.2 * i) + 0.9
     # intercept_guess = 3 * np.exp(-0.5 * i) - 0.1
 
-    # # for amplitude 1 data on Feb 07 2024
-    # hole_sigma_guess = 5
-    # hole_amplitude_guess = 20
-    # bg_sigma_guess = 20
-    # slope_guess = 0.005
-    # bg_amplitude_guess = 100
-    # if i == 0:
-    #     intercept_guess = 3 * np.exp(-0.9 * i) - 0.1
-    # elif i == 2:
-    #     intercept_guess = 0.5
-    # else:
-    #     intercept_guess = 3 * np.exp(-0.9 * i) - 0.2
+    # for amplitude 1 data on Feb 07 2024
+    hole_sigma_guess = 3
+    hole_amplitude_guess = 20
+    bg_sigma_guess = 20
+    slope_guess = 0.005
+    bg_amplitude_guess = 100
+    if i == 0:
+        intercept_guess = 3 * np.exp(-0.9 * i) - 0.1
+    elif i == 2:
+        intercept_guess = 0.5
+        bg_amplitude_guess = 1
+    else:
+        if time < LINEAR_BG_THRESH:
+            intercept_guess = 3 * np.exp(-0.9 * i) - 0.2
+        else:
+            intercept_guess = 0.8
 
     # # for amplitude 0.6 data on Feb 07 2024
     # hole_sigma_guess = 5
@@ -227,12 +238,19 @@ for i, (freq, od) in enumerate(zip(all_scan_freq, all_scan_od)):
     params = model.make_params()
     params['hole_amplitude'].set(min=0, max=5)
     params['hole_sigma'].set(min=1, max=10)
-    params['bg_amplitude'].set(min=0)
 
-    result_hole = model.fit(od, x=freq, params=params,
-                            bg_sigma=bg_sigma_guess, hole_sigma=hole_sigma_guess,
-                            bg_amplitude=bg_amplitude_guess, hole_amplitude=hole_amplitude_guess,
-                            slope=slope_guess, intercept=intercept_guess)
+    if time > LINEAR_BG_THRESH:
+        result_hole = model.fit(od, x=freq, params=params,
+                                hole_sigma=hole_sigma_guess, hole_amplitude=hole_amplitude_guess,
+                                slope=slope_guess, intercept=intercept_guess)
+    else:
+        params['bg_amplitude'].set(min=0)
+        params['bg_sigma'].set(min=10)
+        result_hole = model.fit(od, x=freq, params=params,
+                                bg_sigma=bg_sigma_guess, hole_sigma=hole_sigma_guess,
+                                bg_amplitude=bg_amplitude_guess, hole_amplitude=hole_amplitude_guess,
+                                slope=slope_guess, intercept=intercept_guess)
+
     all_hole_results.append(result_hole)
 
 print("")
@@ -260,16 +278,23 @@ if PLOT_ALL_SCANS:
         # construct background only data (no hole)
         slope = res.params["slope"]
         intercept = res.params["intercept"]
-        amplitude = res.params["bg_amplitude"]
-        center = res.params["bg_center"]
-        sigma = res.params["bg_sigma"]
-        gamma = res.params["bg_gamma"]
 
-        bg_model = LinearModel() + VoigtModel()
-        y_vals = bg_model.eval(x=freq,
-                               slope=slope, intercept=intercept,
-                               amplitude=amplitude, center=center,
-                               sigma=sigma, gamma=gamma)
+        if pump_times[i] > LINEAR_BG_THRESH:
+            bg_model = LinearModel()
+            y_vals = bg_model.eval(x=freq,
+                                   slope=slope, intercept=intercept)
+        else:
+            amplitude = res.params["bg_amplitude"]
+            center = res.params["bg_center"]
+            sigma = res.params["bg_sigma"]
+            gamma = res.params["bg_gamma"]
+
+            bg_model = LinearModel() + VoigtModel()
+            y_vals = bg_model.eval(x=freq,
+                                   slope=slope, intercept=intercept,
+                                   amplitude=amplitude, center=center,
+                                   sigma=sigma, gamma=gamma)
+
         plt.plot(freq, y_vals, '--g', label="Background Only")
 
         plt.xlim((-SCAN_RANGE/2, SCAN_RANGE/2))
@@ -304,6 +329,7 @@ if PLOT_ALL_HEIGHTS:
     ax.errorbar(pump_times, list(map(get_height, all_hole_results)),
                 yerr=list(map(get_height_err, all_hole_results)),
                 capsize=10, marker='o', linestyle='', color=color)
+    ax.axvline(LINEAR_BG_THRESH, ls='--', color='k')
 
     ax.set_title("Hole Height Decay")
     ax.set_xlabel("Pump Time (s)")
@@ -332,6 +358,7 @@ if PLOT_LINEWIDTHS:
                 list(map(get_linewidth, all_hole_results)),
                 yerr=list(map(get_linewidth_err, all_hole_results)),
                 capsize=10, marker='o', linestyle='', color='tab:blue')
+    ax.axvline(LINEAR_BG_THRESH, ls='--', color='k')
     ax.set_xscale('log')
 
     ax.set_title("Hole Linewidth (FWHM) versus Time")
@@ -339,7 +366,7 @@ if PLOT_LINEWIDTHS:
     ax.set_ylabel("Linewidth (MHz)")
     ax.grid(True)
     ax.set_xscale('log')
-    ax.set_ylim((0, 20))
+    ax.set_ylim((0, 15))
 
     plt.tight_layout()
     plt.show()
