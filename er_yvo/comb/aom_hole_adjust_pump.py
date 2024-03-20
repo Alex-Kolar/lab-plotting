@@ -3,12 +3,10 @@ import os
 import warnings
 import numpy as np
 import pandas as pd
-from scipy.signal import find_peaks
-from lmfit import Parameters, Model
 from lmfit.models import LinearModel, VoigtModel
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from matplotlib.collections import LineCollection
+import pickle
 
 
 # for data
@@ -26,6 +24,8 @@ EDGE_THRESH = 1  # For finding rising/falling edge of oscilloscope trigger
 
 # for fitting
 LINEAR_BG_THRESH = 0.2  # All pump times beyond this will use only a linear background (no Voigt)
+SAVE_DATA = True  # dump the fitting data to OUTPUT_DIR (for combined plotting later)
+SAVE_DATA_FILENAME = "1_fits.bin"  # filename for saving detailed above
 
 # for plotting
 # plotting parameters
@@ -40,7 +40,6 @@ PLOT_ALL_HEIGHTS = True  # plot all individually fitted hole heights
 PLOT_LINEWIDTHS = True  # plot fitted linewidth of the hole transmission as a function of time
 PLOT_BG_LINEWIDTHS = False  # plot fitted linewidth of the background as a function of time
 PLOT_BASELINE = True  # plot fitted transmission baseline (background) as a function of time
-# PLOT_AREA = True  # plot fitted area of hole as function of time
 
 
 def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
@@ -256,6 +255,18 @@ for i, (freq, od) in enumerate(zip(all_scan_freq, all_scan_od)):
 print("")
 print(f"FIT REPORT (second hole fitting) (T_pump = {pump_times[0]})")
 print(all_hole_results[0].fit_report())
+
+
+"""
+SAVING DATA
+"""
+
+results_to_save = [res.summary() for res in all_hole_results]
+
+if SAVE_DATA:
+    to_save = (LINEAR_BG_THRESH, pump_times, results_to_save)
+    with open(SAVE_DATA_FILENAME, 'wb') as fh:
+        pickle.dump(to_save, fh)
 
 
 """
