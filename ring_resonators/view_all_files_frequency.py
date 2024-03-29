@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 DATA_DIR = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators"
             "/Mounted_device/03182024")
-SCAN_RANGE = 30 # unit: GHz
+SCAN_RANGE = 30  # unit: GHz
 
 # plotting params
 mpl.rcParams.update({'font.sans-serif': 'Helvetica',
@@ -18,7 +18,7 @@ mpl.rcParams.update({'font.sans-serif': 'Helvetica',
 # get scan data
 filenames = glob.glob('SDS*.csv', recursive=True, root_dir=DATA_DIR)
 paths = [os.path.join(DATA_DIR, file) for file in filenames]
-dfs = [pd.read_csv(file, header=11) for file in paths]
+dfs = [pd.read_csv(file, header=10, skiprows=[11]) for file in paths]
 # get frequency data
 filename = os.path.join(DATA_DIR, "frequencies.csv")
 df_freq = pd.read_csv(filename)
@@ -32,14 +32,12 @@ for file in filenames:
 dfs = [df for _, df in sorted(zip(numbers, dfs))]
 numbers.sort()
 
-print(numbers)
-
 
 # plotting
 for num, df in zip(numbers, dfs):
     center_freq = df_freq["Frequency (THz)"][num-1]
-    ramp = df['Value'].astype(float)
-    transmission = df['Value.1'].astype(float)
+    ramp = df['CH1'].astype(float)
+    transmission = df['CH2'].astype(float)
 
     id_min = np.argmin(ramp)
     id_max = np.argmax(ramp)
