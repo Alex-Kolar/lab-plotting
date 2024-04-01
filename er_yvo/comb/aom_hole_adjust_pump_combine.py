@@ -4,6 +4,8 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import pickle
+from lmfit import Parameters
+from lmfit.models import LinearModel, VoigtModel
 
 
 DATA_DIR = "/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Er YVO SHB & AFC/02_07_24/fit_data"
@@ -17,9 +19,10 @@ OUTPUT_DIR = ("/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs/aom_holebur
 markers = ['o', '^', 's']
 
 # plotting output control
-PLOT_ALL_HEIGHTS = True  # plot all individually fitted hole heights
-PLOT_LINEWIDTHS = True  # plot fitted linewidth of the hole transmission as a function of time
-PLOT_BASELINE = True  # plot fitted transmission baseline (background) as a function of time
+PLOT_ALL_HEIGHTS = False  # plot all individually fitted hole heights
+PLOT_LINEWIDTHS = False  # plot fitted linewidth of the hole transmission as a function of time
+PLOT_BASELINE = False  # plot fitted transmission baseline (background) as a function of time
+PLOT_EFFICIENCY = True  # plot AFC efficiency based on fitted hole data
 
 
 """
@@ -176,6 +179,71 @@ if PLOT_BASELINE:
     ax.set_ylabel(r"Background (OD)")
     ax.grid(True)
     ax.set_ylim((0, 4))
+    ax.legend()
+
+    plt.tight_layout()
+    plt.show()
+
+
+if PLOT_EFFICIENCY:
+    def efficiency(d0, d, F=2):
+        eta = (d/F)**2 * np.exp(-d/F) * np.exp(-7/(F**2)) * np.exp(-d0)
+        return eta
+
+    fig, ax = plt.subplots()
+
+    for i, results in enumerate(combined_fit_results):
+        pump_times = combined_pump_times[i]
+        thresh = thresholds[i]
+
+        efficiencies = []
+        for pump_time, res in zip(pump_times, results):
+            params = res['params']
+
+            # reorder to account for differences in summary/add
+            params_corrected = []
+            for param in params:
+                corrected = (param[0], param[1], param[2], param[4], param[5], param[3], param[6])
+                params_corrected.append(corrected)
+
+            # create params grouping
+            params_group = Parameters()
+            params_group.add_many(*params_corrected)
+
+            # generate model and calculate d0, d
+            intercept_param = [p for p in params if p[0] == 'intercept'][0]
+
+            if pump_time > thresh:
+                model = LinearModel() - VoigtModel(prefix='hole_')
+                d0 = model.eval(params=params_group, x=0)
+                bg = intercept_param[1]
+
+                efficiencies.append(efficiency(d0, d))
+
+            else:
+                model = VoigtModel(prefix='bg_') + LinearModel() + VoigtModel(prefix='hole_')
+                d0 = model.eval(params=params_group, x=0)
+                bg_height_param = [p for p in params if p[0] == 'bg_height'][0]
+                d = intercept_param[1] + bg_height_param[1]
+
+                efficiencies.append(efficiency(d0, d))
+
+        marker = markers[i]
+        amplitude = amplitudes[i]
+
+        ax.scatter(pump_times, efficiencies,
+                   marker=marker, linestyle='',
+                   label=f"Pump Amplitude {amplitude}")
+        # ax.errorbar(pump_times, efficiencies,
+        #             capsize=10, marker=marker, linestyle='',
+        #             label=f"Pump Amplitude {amplitude}")
+
+    ax.set_xscale('log')
+    ax.set_title("AFC Efficiency versus Time")
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel(r"Efficiency")
+    ax.grid(True)
+    # ax.set_ylim((0, 4))
     ax.legend()
 
     plt.tight_layout()
