@@ -32,11 +32,8 @@ OUTPUT_DIR = ("/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs/aom_holebur
               "/02_13_2024/16amp/comb_wait_scan/fit_testing")
 
 # # plotting output control
-PLOT_ALL_SCANS = True  # plot all scans with fit
-PLOT_ALL_HEIGHTS = True  # plot all individually fitted hole heights
-PLOT_LINEWIDTHS = True  # plot fitted linewidth of the hole transmission as a function of time
-# PLOT_BASELINE = False  # plot fitted transmission baseline as a function of time
-# PLOT_AREA = True  # plot fitted area of hole as function of time
+PLOT_ALL_SCANS = True  # plot all scans with peak
+PLOT_ALL_HEIGHTS = True  # plot all scan heights
 
 
 def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
@@ -160,99 +157,24 @@ for trans in all_scan_transmission:
     all_scan_od.append(np.log(max_trans / trans_arr))
 
 
-# fitting
+# find peaks
 
-# do fitting of individual holes
-print("Fitting individual holes...")
-model = VoigtModel(prefix='bg_') - VoigtModel(prefix='hole_') + LinearModel()
-all_hole_results = []
+# for peak finding
+PROMINENCE = 0.1
+
+all_peaks = []
+all_heights = []
 for i, (freq, od) in enumerate(zip(all_scan_freq, all_scan_od)):
-    print(f"\tFitting holes for scan {i+1}/{len(wait_times)}")
-    hole_results = []
+    # use negative od, as peak will be local minimum
+    peaks = find_peaks(-od, prominence=PROMINENCE)[0]
 
-    # old guesses
-    # hole_sigma_guess = 5
-    # hole_amplitude_guess = 20
-    # bg_sigma_guess = 20
-    # bg_amplitude_guess = 100
-    # slope_guess = 0.005
-    # intercept_guess = 3.5*np.exp(-1.2*i) + 0.8
-    # intercept_guess = 3 * np.exp(-1.2 * i) + 0.9
-    # intercept_guess = 3 * np.exp(-0.5 * i) - 0.1
+    # just save peak that has min value
+    peak_vals = od[peaks]
+    peak_to_save = peaks[np.argmin(peak_vals)]
+    all_peaks.append(peak_to_save)
 
-    # # for amplitude 1 data on Feb 07 2024
-    # hole_sigma_guess = 5
-    # hole_amplitude_guess = 20
-    # bg_sigma_guess = 20
-    # slope_guess = 0.005
-    # bg_amplitude_guess = 100
-    # if i == 0:
-    #     intercept_guess = 3 * np.exp(-0.9 * i) - 0.1
-    # elif i == 2:
-    #     intercept_guess = 0.5
-    # else:
-    #     intercept_guess = 3 * np.exp(-0.9 * i) - 0.2
-
-    # # for amplitude 0.6 data on Feb 07 2024
-    # hole_sigma_guess = 5
-    # hole_amplitude_guess = 20
-    # bg_sigma_guess = 20
-    # slope_guess = 0.005
-    # bg_amplitude_guess = 100 * np.exp(-0.9 * i)
-    # if i == 1:
-    #     intercept_guess = 1.3
-    # elif i == 2:
-    #     intercept_guess = 1
-    # elif i == 3:
-    #     intercept_guess = 1
-    # elif i == 12:
-    #     intercept_guess = 0.5
-    # else:
-    #     intercept_guess = 3 * np.exp(-0.8 * i) - 0.4
-
-    # # for amplitude 0.4 data on Feb 07 2024
-    # hole_sigma_guess = 4
-    # hole_amplitude_guess = 20
-    # bg_sigma_guess = 20
-    # slope_guess = 0.005
-    # bg_amplitude_guess = 150 * np.exp(-0.9 * i)
-    # if i == 1:
-    #     intercept_guess = 1.3
-    # elif i == 2:
-    #     intercept_guess = 1
-    # elif i == 3:
-    #     intercept_guess = 1
-    # elif i == 12:
-    #     intercept_guess = 0.5
-    # else:
-    #     intercept_guess = 3 * np.exp(-0.8 * i) - 0.6
-
-    # for 16 amp data on Feb 13 2024
-    hole_sigma_guess = 2
-    hole_amplitude_guess = 3
-    hole_center_guess = -7
-    bg_sigma_guess = 15
-    bg_amplitude_guess = 90
-    # bg_amplitude_guess = 70 + 25*np.exp(0.1*(i-2))
-    bg_center_guess = -5
-    slope_guess = 0
-    intercept_guess = 0.15
-
-    params = model.make_params()
-    params['hole_amplitude'].set(min=0, max=20)
-    params['hole_sigma'].set(min=1, max=10)
-    params['bg_amplitude'].set(min=0)
-
-    result_hole = model.fit(od, x=freq, params=params,
-                            bg_sigma=bg_sigma_guess, hole_sigma=hole_sigma_guess,
-                            bg_amplitude=bg_amplitude_guess, hole_amplitude=hole_amplitude_guess,
-                            bg_center=bg_center_guess, hole_center=hole_center_guess,
-                            slope=slope_guess, intercept=intercept_guess)
-    all_hole_results.append(result_hole)
-
-print("")
-print(f"FIT REPORT (second hole fitting) (T_pump = {wait_times[0]})")
-print(all_hole_results[0].fit_report())
+    height = np.max(od) - od[peak_to_save]
+    all_heights.append(height)
 
 
 """
@@ -268,13 +190,11 @@ if PLOT_ALL_SCANS:
         time = round(wait_times[i], 3)
 
         plt.plot(freq, od, color=color, label="Data")
-        plt.plot(freq, all_hole_results[i].init_fit,
-                 '--r', label="Initial Guess")
-        plt.plot(freq, all_hole_results[i].best_fit,
-                 '--k', label='Fit')
+        plt.plot(freq[all_peaks[i]], od[all_peaks[i]],
+                 marker='x', ls='', color='red', label="Peak")
 
         plt.xlim((-SCAN_RANGE/2, SCAN_RANGE/2))
-        plt.title(f"Fitted Hole, T_pump = {time}")
+        plt.title(f"Peak, T_pump = {time}")
         plt.xlabel("Detuning (MHz)")
         plt.ylabel("Optical Depth")
         plt.legend()
@@ -296,51 +216,15 @@ if PLOT_ALL_HEIGHTS:
     color = 'tab:purple'
     fig, ax = plt.subplots()
 
-    def get_height(x):
-        return x.params['hole_height'].value
-
-    def get_height_err(x):
-        return x.params['hole_height'].stderr
-
-    ax.errorbar(wait_times, list(map(get_height, all_hole_results)),
-                yerr=list(map(get_height_err, all_hole_results)),
-                capsize=10, marker='o', linestyle='', color=color)
+    ax.plot(wait_times, all_heights,
+            marker='o', linestyle='', color=color)
 
     ax.set_title("Hole Height Decay")
     ax.set_xlabel("Wait Time (s)")
-    ax.set_ylabel("Hole Height Fit (OD)")
+    ax.set_ylabel("Hole Height (OD)")
     ax.set_xscale('log')
     ax.grid(True)
     ax.set_ylim((0, 0.5))
-
-    plt.tight_layout()
-    plt.show()
-
-
-# for studying fitted hole width
-if PLOT_LINEWIDTHS:
-    fig, ax = plt.subplots()
-
-    def get_linewidth(x):
-        width = x.params['hole_fwhm'].value  # unit: MHz
-        return width
-
-    def get_linewidth_err(x):
-        error = x.params['hole_fwhm'].stderr  # unit: MHz
-        return error
-
-    ax.errorbar(wait_times,
-                list(map(get_linewidth, all_hole_results)),
-                yerr=list(map(get_linewidth_err, all_hole_results)),
-                capsize=10, marker='o', linestyle='', color='tab:blue')
-    ax.set_xscale('log')
-
-    ax.set_title("Hole Linewidth (FWHM) versus Time")
-    ax.set_xlabel("Wait Time (s)")
-    ax.set_ylabel("Linewidth (MHz)")
-    ax.grid(True)
-    ax.set_xscale('log')
-    ax.set_ylim((0, 20))
 
     plt.tight_layout()
     plt.show()

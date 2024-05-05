@@ -14,7 +14,7 @@ DATA_DIR = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Er 
             "/04_13_24/probe_wo_hdawg/nopump/changing_probe_power")
 TEK_HEADER = ["ParamLabel", "ParamVal", "None", "Seconds", "Volts", "None2"]  # hard-coded from TEK oscilloscope
 SCAN_RANGE = 50  # Unit: MHz
-SCAN_RATE = 1  # Units: Hz (options 1 or 10)
+SCAN_RATE = 10  # Units: Hz (options 1 or 10)
 # data for changing gain settings
 # units: V/W
 GAIN_RES = [1e9, 1e9, 1e9, 1e9, 1e9, 1e9, 1e9, 1e9, 1e9, 1e9, 1e9, 1e9, 1e9, 1e9, 1e9, 1e9, 1e9, 1e8, 1e8, 1e8]
@@ -23,7 +23,7 @@ GAIN_OFF = [1e9, 1e9, 1e9, 1e9, 1e9, 1e9, 1e9, 1e9, 1e9, 1e9, 1e9, 1e9, 1e9, 1e9
 # plotting params
 CMAP_OFFSET = 0.3
 CMAP = cm.Blues
-max_low_plot = 0.5  # for low amplitude pumps
+max_low_plot = 0  # for low amplitude pumps
 xlim = (-25, 25)
 ylim = (0, 6)
 
@@ -183,34 +183,57 @@ PLOTTING
 """
 
 
-lines = []
+lines_low = []
+pow_low = []
+lines_high = []
+pow_high = []
 if PLOT_OD:
     plot_lines = all_scan_od
 else:
     plot_lines = all_scan_transmission
 
-for freq, trans in zip(all_scan_freq, plot_lines):
+for freq, trans, amp in zip(all_scan_freq, plot_lines, probe_pows):
     line = np.column_stack((freq, trans))
-    lines.append(line)
+    if amp <= max_low_plot:
+        lines_low.append(line)
+        pow_low.append(amp)
+    else:
+        lines_high.append(line)
+        pow_high.append(amp)
 
 cmap = truncate_colormap(CMAP, CMAP_OFFSET, 1)
-line_coll = LineCollection(lines, cmap=cmap)
-line_coll.set_array(probe_pows)
-line_coll.set_clim(cmap_vmin, cmap_vmax)
+line_coll_low = LineCollection(lines_low, cmap=cmap)
+line_coll_low.set_array(pow_low)
+line_coll_low.set_clim(cmap_vmin, cmap_vmax)
+line_coll_high = LineCollection(lines_high, cmap=cmap)
+line_coll_high.set_array(pow_high)
+line_coll_high.set_clim(cmap_vmin, cmap_vmax)
 
-fig, ax1 = plt.subplots(1, 1)
-im1 = ax1.add_collection(line_coll, autolim=True)
-ax1.set_xlim(xlim)
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
+im1 = ax1.add_collection(line_coll_low, autolim=True)
+ax1.set_xlim((-SCAN_RANGE/2, SCAN_RANGE/2))
 ax1.set_ylim(ylim)
+im2 = ax2.add_collection(line_coll_high, autolim=True)
+ax2.set_xlim((-SCAN_RANGE/2, SCAN_RANGE/2))
+ax2.set_ylim(ylim)
+
+ax2.tick_params(axis='y', which='both', left=False, labelleft=False)
 ax1.grid(True)
+ax2.grid(True)
 
 # labeling
 ax1.set_xlabel("Detuning (MHz)")
+ax2.set_xlabel("Detuning (MHz)")
 if PLOT_OD:
     ax1.set_ylabel("Optical Depth")
 else:
     ax1.set_ylabel("Transmission (nW)")
-ax1.set_title(rf"Probe Power Change")
+if LOG_CMAP:
+    ax1.set_title(rf"Probe Power Change (Log(power) $\leq$ {max_low_plot})")
+    ax2.set_title(rf"Probe Power Change (Log(power) > {max_low_plot})")
+else:
+    ax1.set_title(rf"Probe Power Change (power $\leq$ {max_low_plot})")
+    ax2.set_title(rf"Probe Power Change (power > {max_low_plot})")
 
 plt.tight_layout()
 
@@ -219,8 +242,9 @@ plt.tight_layout()
 # axcb.set_label("Pump Amplitude")
 # axcb = fig.colorbar(line_coll_high, ax=ax2)
 # axcb.set_label("Pump Amplitude")
-fig.subplots_adjust(right=0.8)
-cbar_ax = fig.add_axes([0.82, 0.15, 0.02, 0.7])
+# add colorbar
+fig.subplots_adjust(right=0.9)
+cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
 cb = fig.colorbar(im1, cax=cbar_ax)
 if LOG_CMAP:
     cb.set_label("Log (base 10) Probe Power (nW)")

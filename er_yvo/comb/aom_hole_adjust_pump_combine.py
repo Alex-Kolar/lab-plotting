@@ -3,6 +3,7 @@ import os
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick
 import pickle
 from lmfit import Parameters
 from lmfit.models import LinearModel, VoigtModel
@@ -211,20 +212,17 @@ if PLOT_EFFICIENCY:
             params_group.add_many(*params_corrected)
 
             # generate model and calculate d0, d
-            intercept_param = [p for p in params if p[0] == 'intercept'][0]
-
             if pump_time > thresh:
                 model = LinearModel() - VoigtModel(prefix='hole_')
                 d0 = model.eval(params=params_group, x=0)
-                bg = intercept_param[1]
+                d = [p for p in params if p[0] == 'hole_height'][0][1]
 
                 efficiencies.append(efficiency(d0, d))
 
             else:
                 model = VoigtModel(prefix='bg_') + LinearModel() + VoigtModel(prefix='hole_')
                 d0 = model.eval(params=params_group, x=0)
-                bg_height_param = [p for p in params if p[0] == 'bg_height'][0]
-                d = intercept_param[1] + bg_height_param[1]
+                d = [p for p in params if p[0] == 'hole_height'][0][1]
 
                 efficiencies.append(efficiency(d0, d))
 
@@ -239,6 +237,8 @@ if PLOT_EFFICIENCY:
         #             label=f"Pump Amplitude {amplitude}")
 
     ax.set_xscale('log')
+    ax.yaxis.set_major_formatter(mtick.PercentFormatter(xmax=1))
+
     ax.set_title("AFC Efficiency versus Time")
     ax.set_xlabel("Time (s)")
     ax.set_ylabel(r"Efficiency")

@@ -11,7 +11,7 @@ import pickle
 
 # for data
 DATA_DIR = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Er YVO SHB & AFC"
-            "/02_07_24/burnprobe/6amp_Bfield/changing_a_pump/1 (~200uW)/changing_N_pump/probe_AOM_scan_49p5mhz")
+            "/02_07_24/burnprobe/6amp_Bfield/changing_a_pump/0.4 (~1.5uW)/changing_N_pump/probe_AOM_scan_49p5mhz")
 BG_DIR = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Er YVO SHB & AFC"
           "/02_07_24/burnprobe/6amp_Bfield/changing_a_pump/bg_transmissionlevel_laseroffres")
 TEK_HEADER = ["ParamLabel", "ParamVal", "None", "Seconds", "Volts", "None2"]  # hard-coded from TEK oscilloscope
@@ -23,9 +23,9 @@ PUMP_TIME = 25.6  # Unit: ms (total pump time = N_pump * pump_time)
 EDGE_THRESH = 1  # For finding rising/falling edge of oscilloscope trigger
 
 # for fitting
-LINEAR_BG_THRESH = 0.2  # All pump times beyond this will use only a linear background (no Voigt)
+LINEAR_BG_THRESH = 1.5  # All pump times beyond this will use only a linear background (no Voigt)
 SAVE_DATA = True  # dump the fitting data to OUTPUT_DIR (for combined plotting later)
-SAVE_DATA_FILENAME = "1_fits.bin"  # filename for saving detailed above
+SAVE_DATA_FILENAME = "0p4_fits.bin"  # filename for saving detailed above
 
 # for plotting
 # plotting parameters
@@ -35,7 +35,7 @@ OUTPUT_DIR = ("/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs/aom_holebur
               "/02_07_2024/comb_time_scan/fit_testing")
 
 # # plotting output control
-PLOT_ALL_SCANS = True  # plot all scans with fit
+PLOT_ALL_SCANS = False  # plot all scans with fit
 PLOT_ALL_HEIGHTS = True  # plot all individually fitted hole heights
 PLOT_LINEWIDTHS = True  # plot fitted linewidth of the hole transmission as a function of time
 PLOT_BG_LINEWIDTHS = False  # plot fitted linewidth of the background as a function of time
@@ -183,25 +183,25 @@ for i, (freq, od) in enumerate(zip(all_scan_freq, all_scan_od)):
     # intercept_guess = 3 * np.exp(-1.2 * i) + 0.9
     # intercept_guess = 3 * np.exp(-0.5 * i) - 0.1
 
-    # for amplitude 1 data on Feb 07 2024
-    hole_sigma_guess = 3
-    hole_amplitude_guess = 20
-    bg_sigma_guess = 20
-    slope_guess = 0.005
-    bg_amplitude_guess = 100
-    if i == 0:
-        intercept_guess = 3 * np.exp(-0.9 * i) - 0.1
-    elif i == 2:
-        intercept_guess = 0.5
-        bg_amplitude_guess = 1
-    else:
-        if time < LINEAR_BG_THRESH:
-            intercept_guess = 3 * np.exp(-0.9 * i) - 0.2
-        else:
-            intercept_guess = 0.8
+    # # for amplitude 1 data on Feb 07 2024
+    # hole_sigma_guess = 3
+    # hole_amplitude_guess = 20
+    # bg_sigma_guess = 20
+    # slope_guess = 0.005
+    # bg_amplitude_guess = 100
+    # if i == 0:
+    #     intercept_guess = 3 * np.exp(-0.9 * i) - 0.1
+    # elif i == 2:
+    #     intercept_guess = 0.5
+    #     bg_amplitude_guess = 1
+    # else:
+    #     if time < LINEAR_BG_THRESH:
+    #         intercept_guess = 3 * np.exp(-0.9 * i) - 0.2
+    #     else:
+    #         intercept_guess = 0.8
 
     # # for amplitude 0.6 data on Feb 07 2024
-    # hole_sigma_guess = 5
+    # hole_sigma_guess = 3
     # hole_amplitude_guess = 20
     # bg_sigma_guess = 20
     # slope_guess = 0.005
@@ -215,24 +215,40 @@ for i, (freq, od) in enumerate(zip(all_scan_freq, all_scan_od)):
     # elif i == 12:
     #     intercept_guess = 0.5
     # else:
-    #     intercept_guess = 3 * np.exp(-0.8 * i) - 0.4
+    #     if time > LINEAR_BG_THRESH:
+    #         intercept_guess = 0.6
+    #     else:
+    #         intercept_guess = 3 * np.exp(-0.8 * i) - 0.4
 
-    # # for amplitude 0.4 data on Feb 07 2024
-    # hole_sigma_guess = 4
-    # hole_amplitude_guess = 20
-    # bg_sigma_guess = 20
-    # slope_guess = 0.005
-    # bg_amplitude_guess = 150 * np.exp(-0.9 * i)
-    # if i == 1:
-    #     intercept_guess = 1.3
-    # elif i == 2:
-    #     intercept_guess = 1
-    # elif i == 3:
-    #     intercept_guess = 1
-    # elif i == 12:
-    #     intercept_guess = 0.5
-    # else:
-    #     intercept_guess = 3 * np.exp(-0.8 * i) - 0.6
+    # for amplitude 0.4 data on Feb 07 2024
+    hole_sigma_guess = 4
+    hole_amplitude_guess = 5
+    if time > LINEAR_BG_THRESH:
+        intercept_guess = 0.8
+        slope_guess = 0.008
+    else:
+        if i == 0:
+            intercept_guess = 1.5
+            slope_guess = 0.02
+            bg_sigma_guess = 20
+            bg_amplitude_guess = 200
+            hole_sigma_guess = 5
+            hole_amplitude_guess = 20
+        elif i == 3:
+            intercept_guess = 1
+            slope_guess = 0.008
+            bg_sigma_guess = 20
+            bg_amplitude_guess = 50
+        elif i == 4:
+            intercept_guess = 1
+            slope_guess = 0.008
+            bg_sigma_guess = 20
+            bg_amplitude_guess = 50
+        else:
+            intercept_guess = 1
+            slope_guess = 0.008
+            bg_sigma_guess = 20
+            bg_amplitude_guess = 100 * np.exp(-0.5 * i)
 
     params = model.make_params()
     params['hole_amplitude'].set(min=0, max=5)
@@ -253,7 +269,7 @@ for i, (freq, od) in enumerate(zip(all_scan_freq, all_scan_od)):
     all_hole_results.append(result_hole)
 
 print("")
-print(f"FIT REPORT (second hole fitting) (T_pump = {pump_times[0]})")
+print(f"FIT REPORT (T_pump = {pump_times[0]})")
 print(all_hole_results[0].fit_report())
 
 
@@ -261,9 +277,8 @@ print(all_hole_results[0].fit_report())
 SAVING DATA
 """
 
-results_to_save = [res.summary() for res in all_hole_results]
-
 if SAVE_DATA:
+    results_to_save = [res.summary() for res in all_hole_results]
     to_save = (LINEAR_BG_THRESH, pump_times, results_to_save)
     with open(SAVE_DATA_FILENAME, 'wb') as fh:
         pickle.dump(to_save, fh)
@@ -347,7 +362,7 @@ if PLOT_ALL_HEIGHTS:
     ax.set_xlabel("Pump Time (s)")
     ax.set_ylabel("Hole Height Fit (OD)")
     ax.grid(True)
-    ax.set_ylim((0, 0.5))
+    ax.set_ylim((0, 1))
 
     plt.tight_layout()
     plt.show()
@@ -445,7 +460,7 @@ if PLOT_BASELINE:
     ax.set_xlabel("Time (s)")
     ax.set_ylabel(r"Background (OD)")
     ax.grid(True)
-    ax.set_ylim((0, 2.5))
+    ax.set_ylim((0, 4))
 
     plt.tight_layout()
     plt.show()
