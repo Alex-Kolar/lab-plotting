@@ -13,9 +13,12 @@ WAVELENGTH = 1535.914  # unit: nm
 SCAN_RANGE = 2  # unit: GHz
 
 # plotting params
-mpl.rcParams.update({'font.sans-serif': 'Helvetica',
+mpl.rcParams.update({'font.sans-serif': 'Arial',
                      'font.size': 12})
 color = 'cornflowerblue'
+SAVE_FILE = True
+OUTPUT_PATH = ("/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs"
+               "/ring_resonators/planarized/cooldown_12072023/D17_1535_914_2peak.svg")
 
 
 df = pd.read_csv(DATA, header=10, skiprows=[11])
@@ -26,7 +29,7 @@ transmission = df['CH2'].astype(float)
 id_min = np.argmin(ramp)
 id_max = np.argmax(ramp)
 transmission = transmission[id_min:id_max]
-freq = np.linspace(0, SCAN_RANGE * 1e3, id_max - id_min)  # unit: MHz
+freq = np.linspace(-(SCAN_RANGE * 1e3)/2, (SCAN_RANGE * 1e3)/2, id_max - id_min)  # unit: MHz
 
 # fitting
 model = BreitWignerModel(prefix='lf_') + BreitWignerModel(prefix='hf_') + ConstantModel()
@@ -63,7 +66,10 @@ plt.legend(shadow=True)
 
 
 plt.tight_layout()
-plt.show()
+if SAVE_FILE:
+    plt.savefig(OUTPUT_PATH)
+else:
+    plt.show()
 
 # # for Milan measurements
 # time_length = np.max(time) - np.min(time)

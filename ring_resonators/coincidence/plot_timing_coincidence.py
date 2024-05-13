@@ -11,7 +11,7 @@ FILENAME = "/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring
 FITTING = False  # add a gaussian fit
 WAVELENGTH = 1537.782  # units: nm
 SAVE_FILE = True
-OUTPUT_PATH = "/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs/ring_resonators/original/coincidence_1ns.svg"
+OUTPUT_PATH = "/output_figs/ring_resonators/original/coincidence_1ns.svg"
 
 # plotting params
 mpl.rcParams.update({'font.sans-serif': 'Arial',
