@@ -4,6 +4,9 @@ import matplotlib.pyplot as plt
 
 DATA_FILE = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab members/ZhongLab_Alex"
              "/Ring Resonators/Alignment Tests/position_data_20240404_095511.csv")
+SHOW_THRESH = True
+MAX_THRESH = 0.100  # units: uW
+MIN_THRESH = 0.010  # units: uW
 
 
 df = pd.read_csv(DATA_FILE)
@@ -13,16 +16,26 @@ time_series /= 3600  # convert to hours
 
 
 # plotting of power
-plt.plot(df["Power (uW)"])
-plt.plot(time_series, df["Power (uW)"])
+fig, ax = plt.subplots()
 
-plt.title("Power versus Time")
-plt.xlabel("Time (hours)")
-plt.ylabel(r"Power ($\mu$W)")
-plt.grid(True)
+ax.plot(time_series, df["Power (uW)"])
+if SHOW_THRESH:
+    ax.axhline(MAX_THRESH, color='k', ls='--')
+    ax.axhline(MIN_THRESH, color='k', ls='--')
 
-plt.tight_layout()
-plt.show()
+    # add labels
+    ax_r = ax.twinx()
+    ax_r.set_ylim(ax.get_ylim())
+    ax_r.set_yticks([MIN_THRESH, MAX_THRESH],
+                    ["Min Power", "Max Power"])
+
+ax.set_title("Power versus Time")
+ax.set_xlabel("Time (hours)")
+ax.set_ylabel(r"Power ($\mu$W)")
+ax.grid(True)
+
+fig.tight_layout()
+fig.show()
 
 
 # plotting of Relative position
