@@ -7,13 +7,17 @@ DATA_FILE = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab members
 
 
 df = pd.read_csv(DATA_FILE)
+time_series = df["Epoch Time (s)"]
+time_series = time_series - time_series[0]
+time_series /= 3600  # convert to hours
 
 
 # plotting of power
 plt.plot(df["Power (uW)"])
+plt.plot(time_series, df["Power (uW)"])
 
-plt.title("Power versus Iteration")
-plt.xlabel("Iteration Number")
+plt.title("Power versus Time")
+plt.xlabel("Time (hours)")
 plt.ylabel(r"Power ($\mu$W)")
 plt.grid(True)
 
@@ -23,12 +27,12 @@ plt.show()
 
 # plotting of Relative position
 fig, ax = plt.subplots(3, 1)
-ax[0].plot(df["Current position axis 0"], color='tab:blue')
-ax[1].plot(df["Current position axis 1"], color='tab:orange')
-ax[2].plot(df["Current position axis 2"], color='tab:green')
+ax[0].plot(time_series, df["Current position axis 0"], color='tab:blue')
+ax[1].plot(time_series, df["Current position axis 1"], color='tab:orange')
+ax[2].plot(time_series, df["Current position axis 2"], color='tab:green')
 
-ax[0].set_title("Relative Position (steps) versus Iteration")
-ax[2].set_xlabel("Iteration Number")
+ax[0].set_title("Relative Position (steps) versus Time")
+ax[2].set_xlabel("Time (hours)")
 ax[0].set_ylabel("Axis 0")
 ax[1].set_ylabel("Axis 1")
 ax[2].set_ylabel("Axis 2")
@@ -38,13 +42,14 @@ plt.show()
 
 
 # plotting of Real position
+# multiply by 1e6 to convert to micrometers
 fig, ax = plt.subplots(3, 1)
-ax[0].plot(df["Real position axis 0"], color='tab:blue')
-ax[1].plot(df["Real position axis 1"], color='tab:orange')
-ax[2].plot(df["Real position axis 2"], color='tab:green')
+ax[0].plot(time_series, df["Real position axis 0"]*1e6, color='tab:blue')
+ax[1].plot(time_series, df["Real position axis 1"]*1e6, color='tab:orange')
+ax[2].plot(time_series, df["Real position axis 2"]*1e6, color='tab:green')
 
-ax[0].set_title("Real Position (m) versus Iteration")
-ax[2].set_xlabel("Iteration Number")
+ax[0].set_title(r"Real Position ($\mu$m) versus Time")
+ax[2].set_xlabel("Time (hours)")
 ax[0].set_ylabel("Axis 0")
 ax[1].set_ylabel("Axis 1")
 ax[2].set_ylabel("Axis 2")
