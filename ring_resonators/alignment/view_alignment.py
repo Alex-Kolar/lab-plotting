@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 
 DATA_FILE = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab members/ZhongLab_Alex"
-             "/Ring Resonators/Alignment Tests/position_data_20240404_095511.csv")
+             "/Ring Resonators/Alignment Tests/position_data_20240522_135248.csv")
 SHOW_THRESH = True
 MAX_THRESH = 0.100  # units: uW
 MIN_THRESH = 0.010  # units: uW
@@ -33,6 +33,9 @@ ax.set_title("Power versus Time")
 ax.set_xlabel("Time (hours)")
 ax.set_ylabel(r"Power ($\mu$W)")
 ax.grid(True)
+
+ax.set_ylim((0, 0.110))
+ax_r.set_ylim((0, 0.110))
 
 fig.tight_layout()
 fig.show()
@@ -67,7 +70,7 @@ ax[0].set_ylabel("Axis 0")
 ax[1].set_ylabel("Axis 1")
 ax[2].set_ylabel("Axis 2")
 
-ax[1].set_ylim((0.0035, 0.0037))
+ax[2].set_ylim((1400, 1500))
 
 plt.tight_layout()
 plt.show()
