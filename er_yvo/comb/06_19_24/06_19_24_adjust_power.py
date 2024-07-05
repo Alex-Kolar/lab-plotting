@@ -30,9 +30,9 @@ mpl.rcParams.update({'font.size': 12,
 CMAP_OFFSET = 0.3
 CMAP = cm.Blues
 xlim = (-SCAN_RANGE/2, SCAN_RANGE/2)
-ylim = (0, 8)
+ylim = (0, 3)
 
-PLOT_OD = False  # plot as optical depth
+PLOT_OD = True  # plot as optical depth
 LOG_CMAP = False  # use log scale for colormap
 
 
@@ -214,7 +214,7 @@ if PLOT_OD:
     ax.set_ylabel("Optical Depth")
 else:
     ax.set_ylabel("Transmission (nW)")
-ax.set_title(rf"Probe Amplitude Change")
+ax.set_title(rf"Pump Amplitude Change")
 
 plt.tight_layout()
 
@@ -223,9 +223,9 @@ fig.subplots_adjust(right=0.8)
 cbar_ax = fig.add_axes([0.82, 0.15, 0.02, 0.7])
 cb = fig.colorbar(im, cax=cbar_ax)
 if LOG_CMAP:
-    cb.set_label("Log Probe Amplitude")
+    cb.set_label("Log Pump Amplitude")
 else:
-    cb.set_label("Probe Amplitude")
+    cb.set_label("Pump Amplitude")
 # axcb = fig.colorbar(line_coll_low, ax=ax1)
 # axcb.set_label("Pump Amplitude")
 # axcb = fig.colorbar(line_coll_high, ax=ax2)
