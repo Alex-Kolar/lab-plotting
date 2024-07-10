@@ -11,7 +11,7 @@ from matplotlib.collections import LineCollection
 
 
 # for data
-DATA_DIR = "/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Er YVO Holeburning/11_01_23/6amp/hole/Nruns"
+DATA_DIR = "/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Er YVO SHB & AFC/11_01_23/6amp/hole/Nruns"
 TEK_HEADER = ["ParamLabel", "ParamVal", "None", "Seconds", "Volts", "None2"]  # hard-coded from TEK oscilloscope
 SCAN_RANGE = 40  # Unit: MHz
 REMOVE_LAST = True  # to remove last t_wait segment of data. Only to be used for October 12 data.
@@ -453,12 +453,12 @@ if PLOT_ALL_HEIGHTS:
     def get_height_err(x):
         return x.params['height'].stderr
 
-    ax.errorbar(all_hole_centers, map(get_height, all_hole_results),
-                yerr=map(get_height_err, all_hole_results),
+    ax.errorbar(all_hole_centers, list(map(get_height, all_hole_results)),
+                yerr=list(map(get_height_err, all_hole_results)),
                 capsize=10, marker='o', linestyle='', color=color)
     # plt.semilogy(all_centers_combine, result_fit_height.best_fit,
     #              'k--', label='Fit')
-    # ax.set_xscale('log')
+    ax.set_xscale('log')
 
     ax.set_title("Hole Transmission Decay (6A B-Field)")
     ax.set_xlabel("Time (s)")
@@ -615,8 +615,8 @@ if PLOT_BASELINE:
     def get_bg_err(x):
         return x.params['intercept'].stderr
 
-    ax.errorbar(all_hole_centers, map(get_bg, all_hole_results),
-                yerr=map(get_bg_err, all_hole_results),
+    ax.errorbar(all_hole_centers, list(map(get_bg, all_hole_results)),
+                yerr=list(map(get_bg_err, all_hole_results)),
                 capsize=10, marker='o', linestyle='', color='tab:orange',
                 label='Data')
     ax.plot(all_hole_centers, result_bg.best_fit,
