@@ -10,11 +10,11 @@ import pickle
 
 
 DATA_DIR = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators"
-            "/New_mounted_device/07182024")
+            "/New_mounted_device/07192024")
 CSV_PATH = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators"
-            "/New_mounted_device/07182024/resonances_07_18_2024.csv")
+            "/New_mounted_device/07192024/resonances_07_19_2024.csv")
 OUTPUT_DIR = ("/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs/ring_resonators"
-              "/new_mounted/room_temp_07182024/testing")
+              "/new_mounted/room_temp_07192024/testing")
 
 # fitting params
 SMOOTHING = 21

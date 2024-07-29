@@ -71,6 +71,8 @@ for day in days:
 
     log_data[day] = data
 
+# down-sample power data to match temperature data
+
 
 # plotting of power versus time
 fig, ax = plt.subplots()
@@ -108,3 +110,7 @@ plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m-%d %H%M'))
 plt.gcf().autofmt_xdate()
 fig.tight_layout()
 fig.show()
+
+
+# plotting of power versus temperature
+

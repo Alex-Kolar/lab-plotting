@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 
 DATA_DIR = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators"
-            "/Mounted_device/03182024")
+            "/Mounted_device/04292024")
 SCAN_RANGE = 30  # unit: GHz
 
 # plotting params

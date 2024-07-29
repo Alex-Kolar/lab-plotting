@@ -9,7 +9,7 @@ from lmfit.models import GaussianModel, ConstantModel
 
 # for data handling
 DATA_DIR = "/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators" \
-           "/Coincidence Count Measurement/08102023"
+           "/Original_device/Coincidence Count Measurement/08102023"
 
 # measured experimental parameters
 MEAS_POWER = np.array([28.63, 56.49, 86.20, 95.05])  # unit: uW
