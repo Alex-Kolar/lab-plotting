@@ -7,7 +7,9 @@ import matplotlib.pyplot as plt
 INPUT_DIRS = ("/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs/ring_resonators"
               "/new_mounted/room_temp_07182024",
               "/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs/ring_resonators"
-              "/new_mounted/room_temp_07192024")
+              "/new_mounted/room_temp_07192024",
+              "/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs/ring_resonators"
+              "/new_mounted/room_temp_07222024")
 # plotting params
 mpl.rcParams.update({'font.sans-serif': 'Helvetica',
                      'font.size': 12})
@@ -33,13 +35,15 @@ labels = list(q_data.keys())
 bar_y = [max(vals) for vals in q_data.values()]
 labels, bar_y = zip(*sorted(zip(labels, bar_y)))
 
-plt.bar(bar_x, bar_y,
-        color=color, edgecolor='k', zorder=2)
+fig, ax = plt.subplots(figsize=(10, 5))
 
-plt.xticks(bar_x, labels)
-plt.xlabel("Device Number")
-plt.ylabel("Highest Q Factor")
-plt.grid(axis='y')
+ax.bar(bar_x, bar_y,
+       color=color, edgecolor='k', zorder=2)
 
-plt.tight_layout()
-plt.show()
+ax.set_xticks(bar_x, labels)
+ax.set_xlabel("Device Number")
+ax.set_ylabel("Highest Q Factor")
+ax.grid(axis='y')
+
+fig.tight_layout()
+fig.show()

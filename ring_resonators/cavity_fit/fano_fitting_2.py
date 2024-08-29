@@ -8,7 +8,7 @@ from lmfit.models import BreitWignerModel, ConstantModel
 # DATA = "/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators" \
 #        "/Original_device/Coincidence Count Measurement/08022023/SDS00002.csv"
 DATA = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators"
-        "/Planarized_device/cold_scan_12012023/cold_1535p914.csv")
+        "/Planarized_device/cold_scan_12012023/cold_1535p48.csv")
 WAVELENGTH = 1535.48  # unit: nm
 SCAN_RANGE = 30.623  # unit: GHz
 
@@ -23,11 +23,10 @@ fit_range = (13000, 17000)
 
 
 df = pd.read_csv(DATA, header=1)
-print(df)
 
 # time = df['Second'].astype(float)
-ramp = df['Volt'].astype(float)
-transmission = df['Volt.1'].astype(float)
+ramp = df['Volt'].astype(float).to_numpy()
+transmission = df['Volt.1'].astype(float).to_numpy()
 
 id_min = np.argmin(ramp)
 id_max = np.argmax(ramp)
@@ -60,7 +59,7 @@ print("Q:", q)
 plt.plot(freq, transmission, color=color, label="Transmission")
 plt.plot(freq[idx_to_fit], out.best_fit, '--k', label="Fit")
 plt.plot(freq[idx_to_fit], out.init_fit, '--r', label="Initial")
-plt.xlim(xlim)
+# plt.xlim(xlim)
 plt.grid('on')
 plt.legend(shadow=True)
 plt.xlabel("Frequency (MHz)")
