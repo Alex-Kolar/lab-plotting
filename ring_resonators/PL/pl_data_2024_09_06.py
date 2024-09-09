@@ -7,15 +7,10 @@ from lmfit.models import ExponentialModel, ConstantModel
 
 
 DATA_DIR = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators"
-            "/New_mounted_device/10mK/pl_09042024")
+            "/New_mounted_device/10mK/PL_scan_2024_09_06")
 OUTPUT_DIR = ("/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs/ring_resonators"
-              "/new_mounted/10mK_pl/09042024")
-AOM_FREQ = 0.6  # unit: GHz
-
+              "/new_mounted/10mK_pl/09062024")
 CUTOFF_IDX = 5
-
-START_SWEEP = 0.972  # unit: GHz
-END_SWEEP = 1.226  # unit: GHz
 
 # plotting params
 mpl.rcParams.update({'font.sans-serif': 'Helvetica',
@@ -62,7 +57,7 @@ for file in pl_files:
              transform=ax.transAxes)
     plt.xlabel('Time (s)')
     plt.ylabel('Counts')
-    # plt.ylim((0, 100))
+    plt.ylim((0, 100))
     # plt.yscale('log')
 
     plt.tight_layout()
@@ -85,7 +80,7 @@ tau_err = np.fromiter(map(lambda x: x.params['decay'].stderr, all_res), float)
 # plotting of PL
 plt.errorbar(freqs, areas,
              ls='', marker='o', capsize=3, color='cornflowerblue')
-plt.xlabel(f'Frequency + {freq_min + AOM_FREQ:.3f} (GHz)')
+plt.xlabel(f'Frequency + {freq_min:.3f} (GHz)')
 plt.ylabel('PL Area (A.U.)')
 plt.grid(True)
 
@@ -105,30 +100,8 @@ axs[2].errorbar(freqs, 1e3*tau, yerr=1e3*tau_err,
 axs[0].set_ylabel('Fitted Background (A.U.)')
 axs[1].set_ylabel('Laser Counts')
 axs[2].set_ylabel('PL Lifetime (ms)')
-axs[-1].set_xlabel(f'Frequency + {freq_min + AOM_FREQ:.3f} (GHz)')
-axs[0].set_ylim((0, 20))
+axs[-1].set_xlabel(f'Frequency + {freq_min:.3f} (GHz)')
 axs[2].set_ylim((0, 15))
-
-plt.tight_layout()
-plt.show()
-
-# plotting of pl with sweep area
-max_idx: int = np.argmax(areas)
-max_freq = freqs[max_idx]
-print(f"Start laser frequency: {freq_min + AOM_FREQ + max_freq + START_SWEEP} GHz")
-print(f"Stop laser frequency: {freq_min + AOM_FREQ + max_freq + END_SWEEP} GHz")
-print(f"Center laser frequency: {freq_min + AOM_FREQ + max_freq + (START_SWEEP + END_SWEEP)/2} GHz")
-
-plt.errorbar(freqs, areas,
-             ls='', marker='o', capsize=3, color='cornflowerblue')
-plt.axvline(max_freq, color='k', ls='--')
-plt.axvline(max_freq + START_SWEEP, color='r', ls='--')
-plt.axvline(max_freq + END_SWEEP, color='r', ls='--')
-plt.text(x=max_freq, y=min(areas),
-         s=f'{freq_min + AOM_FREQ + max_freq:.3f} GHz')
-plt.xlabel(f'Frequency + {freq_min + AOM_FREQ:.3f} (GHz)')
-plt.ylabel('PL Area (A.U.)')
-plt.grid(True)
 
 plt.tight_layout()
 plt.show()

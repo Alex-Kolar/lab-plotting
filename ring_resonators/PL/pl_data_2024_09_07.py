@@ -7,15 +7,10 @@ from lmfit.models import ExponentialModel, ConstantModel
 
 
 DATA_DIR = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators"
-            "/New_mounted_device/10mK/pl_09042024")
+            "/New_mounted_device/10mK/pl_09072024")
 OUTPUT_DIR = ("/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs/ring_resonators"
-              "/new_mounted/10mK_pl/09042024")
-AOM_FREQ = 0.6  # unit: GHz
-
+              "/new_mounted/10mK_pl/09072024")
 CUTOFF_IDX = 5
-
-START_SWEEP = 0.972  # unit: GHz
-END_SWEEP = 1.226  # unit: GHz
 
 # plotting params
 mpl.rcParams.update({'font.sans-serif': 'Helvetica',
@@ -27,16 +22,16 @@ bbox = dict(boxstyle='square', facecolor='white', alpha=1, edgecolor='black')
 pl_files = glob.glob(DATA_DIR + "/*.npz")
 
 model = ExponentialModel() + ConstantModel()
-freqs = []
+pump_times = []
 all_res = []
 laser_pulses = []
 areas = []
 for file in pl_files:
-    freq_str = os.path.basename(file).split('.')[0]
-    freq_str = freq_str[5:]  # remove 'freq_'
-    freq_str_decimal = freq_str.replace('_', '.')
-    freq = float(freq_str_decimal)
-    freqs.append(freq)
+    pump_str = file.split('_')[-1]
+    pump_str = pump_str[:-4]  # remove '.npz'
+    pump_str_save = pump_str.replace('.', '_')
+    pump_time = float(pump_str)
+    pump_times.append(pump_time)
 
     data = np.load(file)
     bins = data['bins'][CUTOFF_IDX:]
@@ -62,16 +57,14 @@ for file in pl_files:
              transform=ax.transAxes)
     plt.xlabel('Time (s)')
     plt.ylabel('Counts')
-    # plt.ylim((0, 100))
+    plt.ylim((0, 40))
     # plt.yscale('log')
 
     plt.tight_layout()
-    plt.savefig(OUTPUT_DIR + '/' + freq_str + '.png')
+    plt.savefig(OUTPUT_DIR + '/' + pump_str_save + '.png')
     plt.clf()
 
-freqs = np.array(freqs)
-freq_min = min(freqs)
-freqs = freqs - freq_min
+pump_times = np.array(pump_times)
 
 # get data from fits
 amplitudes = np.fromiter(map(lambda x: x.params['amplitude'].value, all_res), float)
@@ -83,10 +76,21 @@ tau_err = np.fromiter(map(lambda x: x.params['decay'].stderr, all_res), float)
 
 
 # plotting of PL
-plt.errorbar(freqs, areas,
+plt.errorbar(pump_times, areas,
              ls='', marker='o', capsize=3, color='cornflowerblue')
-plt.xlabel(f'Frequency + {freq_min + AOM_FREQ:.3f} (GHz)')
+plt.xlabel(f'Pump Time (s)')
 plt.ylabel('PL Area (A.U.)')
+plt.grid(True)
+
+plt.tight_layout()
+plt.show()
+
+
+# plotting of PL
+plt.errorbar(pump_times, amplitudes, yerr=amplitude_err,
+             ls='', marker='o', capsize=3, color='cornflowerblue')
+plt.xlabel(f'Pump Time (s)')
+plt.ylabel('Fitted PL Amplitude (A.U.)')
 plt.grid(True)
 
 plt.tight_layout()
@@ -95,40 +99,18 @@ plt.show()
 
 # plotting of other parameters
 fig, axs = plt.subplots(3, 1, sharex=True, figsize=(8, 8))
-axs[0].errorbar(freqs, bgs, yerr=bg_err,
+axs[0].errorbar(pump_times, bgs, yerr=bg_err,
                 ls='', marker='o', capsize=3, color='cornflowerblue')
-axs[1].plot(freqs, laser_pulses,
+axs[1].plot(pump_times, laser_pulses,
             ls='', marker='o', color='coral')
-axs[2].errorbar(freqs, 1e3*tau, yerr=1e3*tau_err,
+axs[2].errorbar(pump_times, 1e3*tau, yerr=1e3*tau_err,
                 ls='', marker='o', capsize=3, color='mediumpurple')
 
 axs[0].set_ylabel('Fitted Background (A.U.)')
 axs[1].set_ylabel('Laser Counts')
 axs[2].set_ylabel('PL Lifetime (ms)')
-axs[-1].set_xlabel(f'Frequency + {freq_min + AOM_FREQ:.3f} (GHz)')
-axs[0].set_ylim((0, 20))
+axs[-1].set_xlabel(f'Pump Time (s)')
 axs[2].set_ylim((0, 15))
-
-plt.tight_layout()
-plt.show()
-
-# plotting of pl with sweep area
-max_idx: int = np.argmax(areas)
-max_freq = freqs[max_idx]
-print(f"Start laser frequency: {freq_min + AOM_FREQ + max_freq + START_SWEEP} GHz")
-print(f"Stop laser frequency: {freq_min + AOM_FREQ + max_freq + END_SWEEP} GHz")
-print(f"Center laser frequency: {freq_min + AOM_FREQ + max_freq + (START_SWEEP + END_SWEEP)/2} GHz")
-
-plt.errorbar(freqs, areas,
-             ls='', marker='o', capsize=3, color='cornflowerblue')
-plt.axvline(max_freq, color='k', ls='--')
-plt.axvline(max_freq + START_SWEEP, color='r', ls='--')
-plt.axvline(max_freq + END_SWEEP, color='r', ls='--')
-plt.text(x=max_freq, y=min(areas),
-         s=f'{freq_min + AOM_FREQ + max_freq:.3f} GHz')
-plt.xlabel(f'Frequency + {freq_min + AOM_FREQ:.3f} (GHz)')
-plt.ylabel('PL Area (A.U.)')
-plt.grid(True)
 
 plt.tight_layout()
 plt.show()
