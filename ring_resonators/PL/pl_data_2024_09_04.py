@@ -10,6 +10,8 @@ DATA_DIR = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Rin
             "/New_mounted_device/10mK/pl_09042024")
 OUTPUT_DIR = ("/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs/ring_resonators"
               "/new_mounted/10mK_pl/09042024")
+OUTPUT_DIR_FINAL = ("/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs"
+                    "/ring_resonators/new_mounted/10mK_pl/600mT_area_AOM_orange.svg")
 AOM_FREQ = 0.6  # unit: GHz
 
 CUTOFF_IDX = 5
@@ -22,6 +24,8 @@ mpl.rcParams.update({'font.sans-serif': 'Helvetica',
                      'font.size': 12})
 color = 'cornflowerblue'
 bbox = dict(boxstyle='square', facecolor='white', alpha=1, edgecolor='black')
+SAVE_FITS = False
+SAVE_FIG = True
 
 
 pl_files = glob.glob(DATA_DIR + "/*.npz")
@@ -48,26 +52,27 @@ for file in pl_files:
                     decay=0.01)
     all_res.append(res)
 
-    t1 = res.params['decay'].value
-    t1_err = res.params['decay'].stderr
-    text = rf'$T_1$ = {t1*1e3:.3f} $\pm$ {t1_err*1e3:.3f} ms'
+    if SAVE_FITS:
+        t1 = res.params['decay'].value
+        t1_err = res.params['decay'].stderr
+        text = rf'$T_1$ = {t1*1e3:.3f} $\pm$ {t1_err*1e3:.3f} ms'
 
-    plt.plot(bins, hist,
-             ls='', marker='o', color='cornflowerblue')
-    plt.plot(bins, res.best_fit,
-             'k--')
-    ax = plt.gca()
-    plt.text(0.95, 0.95, text,
-             ha='right', va='top',
-             transform=ax.transAxes)
-    plt.xlabel('Time (s)')
-    plt.ylabel('Counts')
-    # plt.ylim((0, 100))
-    # plt.yscale('log')
+        plt.plot(bins, hist,
+                 ls='', marker='o', color='cornflowerblue')
+        plt.plot(bins, res.best_fit,
+                 'k--')
+        ax = plt.gca()
+        plt.text(0.95, 0.95, text,
+                 ha='right', va='top',
+                 transform=ax.transAxes)
+        plt.xlabel('Time (s)')
+        plt.ylabel('Counts')
+        # plt.ylim((0, 100))
+        # plt.yscale('log')
 
-    plt.tight_layout()
-    plt.savefig(OUTPUT_DIR + '/' + freq_str + '.png')
-    plt.clf()
+        plt.tight_layout()
+        plt.savefig(OUTPUT_DIR + '/' + freq_str + '.png')
+        plt.clf()
 
 freqs = np.array(freqs)
 freq_min = min(freqs)
@@ -84,13 +89,18 @@ tau_err = np.fromiter(map(lambda x: x.params['decay'].stderr, all_res), float)
 
 # plotting of PL
 plt.errorbar(freqs, areas,
-             ls='', marker='o', capsize=3, color='cornflowerblue')
+             ls='', marker='o', capsize=3, color='coral')
+plt.title('600 mT PL')
 plt.xlabel(f'Frequency + {freq_min + AOM_FREQ:.3f} (GHz)')
 plt.ylabel('PL Area (A.U.)')
 plt.grid(True)
 
 plt.tight_layout()
-plt.show()
+if SAVE_FIG:
+    plt.savefig(OUTPUT_DIR_FINAL)
+else:
+    plt.show()
+plt.clf()
 
 
 # plotting of other parameters

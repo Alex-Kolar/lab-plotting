@@ -9,7 +9,7 @@ from lmfit.models import ExponentialModel, ConstantModel
 DATA_DIR = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators"
             "/New_mounted_device/10mK/pl_08312024")
 OUTPUT_DIR = ("/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs/ring_resonators"
-              "/new_mounted/10mK_pl/08312024")
+              "/new_mounted/10mK_pl/all_fitted_decay/08312024")
 CUTOFF_IDX = 5
 
 # plotting params
@@ -17,6 +17,7 @@ mpl.rcParams.update({'font.sans-serif': 'Helvetica',
                      'font.size': 12})
 color = 'cornflowerblue'
 bbox = dict(boxstyle='square', facecolor='white', alpha=1, edgecolor='black')
+SAVE_FITS = False
 
 
 pl_files = glob.glob(DATA_DIR + "/*.npz")
@@ -43,26 +44,27 @@ for file in pl_files:
                     decay=0.01)
     all_res.append(res)
 
-    t1 = res.params['decay'].value
-    t1_err = res.params['decay'].stderr
-    text = rf'$T_1$ = {t1*1e3:.3f} $\pm$ {t1_err*1e3:.3f} ms'
+    if SAVE_FITS:
+        t1 = res.params['decay'].value
+        t1_err = res.params['decay'].stderr
+        text = rf'$T_1$ = {t1*1e3:.3f} $\pm$ {t1_err*1e3:.3f} ms'
 
-    plt.plot(bins, hist,
-             ls='', marker='o', color='cornflowerblue')
-    plt.plot(bins, res.best_fit,
-             'k--')
-    ax = plt.gca()
-    plt.text(0.95, 0.95, text,
-             ha='right', va='top',
-             transform=ax.transAxes)
-    plt.xlabel('Time (s)')
-    plt.ylabel('Counts')
-    plt.ylim((0, 100))
-    # plt.yscale('log')
+        plt.plot(bins, hist,
+                 ls='', marker='o', color='cornflowerblue')
+        plt.plot(bins, res.best_fit,
+                 'k--')
+        ax = plt.gca()
+        plt.text(0.95, 0.95, text,
+                 ha='right', va='top',
+                 transform=ax.transAxes)
+        plt.xlabel('Time (s)')
+        plt.ylabel('Counts')
+        plt.ylim((0, 100))
+        # plt.yscale('log')
 
-    plt.tight_layout()
-    plt.savefig(OUTPUT_DIR + '/' + freq_str + '.png')
-    plt.clf()
+        plt.tight_layout()
+        plt.savefig(OUTPUT_DIR + '/' + freq_str + '.png')
+        plt.clf()
 
 freqs = np.array(freqs)
 freq_min = min(freqs)
