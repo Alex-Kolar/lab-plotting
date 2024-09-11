@@ -12,12 +12,14 @@ PL_DIR = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring 
           "/New_mounted_device/10mK/pl_08312024")
 CAVITY_DIR = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators"
               "/New_mounted_device/10mK/09032024/SDS00002.csv")
-OUTPUT_DIR = ("/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs/ring_resonators"
-              "/new_mounted/10mK_pl/08312024_combined")
+CAVITY_CALIB_DIR = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators"
+                    "/New_mounted_device/10mK/09032024/SDS00003.csv")
 FREQ_START = 194811.486  # unit: GHz
 FREQ_END = 194819.973  # unit: GHz
 AOM_FREQ = 0.6  # unit: GHz
 
+# meta idx params
+CAVITY_PEAK_RANGE = (3500, 4000)
 CUTOFF_IDX = 5
 
 # plotting params
@@ -25,7 +27,22 @@ mpl.rcParams.update({'font.sans-serif': 'Helvetica',
                      'font.size': 12})
 color = 'cornflowerblue'
 bbox = dict(boxstyle='square', facecolor='white', alpha=1, edgecolor='black')
+SAVE_FIG = True
+SAVE_NAME = ("/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs"
+             "/ring_resonators/new_mounted/10mK_pl/300mT_area_pl_and_cavity.svg")
 
+
+# get cavity calibration data
+df = pd.read_csv(CAVITY_CALIB_DIR, header=10, skiprows=[11])
+ramp = df['CH1'].astype(float).to_numpy()
+transmission = df['CH2'].astype(float).to_numpy()
+
+# find difference in scan edges
+scan_max = np.argmax(ramp)
+trans_max = np.argmax(transmission[CAVITY_PEAK_RANGE[0]:CAVITY_PEAK_RANGE[1]])
+idx_diff = (trans_max + CAVITY_PEAK_RANGE[0]) - scan_max
+
+print(f"IDX difference: {idx_diff}")
 
 # get cavity data
 df = pd.read_csv(CAVITY_DIR, header=10, skiprows=[11])
@@ -35,10 +52,11 @@ transmission = df['CH2'].astype(float).to_numpy()
 id_min = np.argmin(ramp)
 id_max = np.argmax(ramp)
 ramp = ramp[id_min:id_max]
-transmission = transmission[id_min:id_max]
+transmission = transmission[id_min+idx_diff:id_max+idx_diff]
 
 # convert time to frequency
 freq_cavity = np.linspace(0, (FREQ_END - FREQ_START), id_max-id_min)  # unit: GHz
+
 
 # get PL data
 pl_files = glob.glob(PL_DIR + "/*.npz")
@@ -65,27 +83,6 @@ for file in pl_files:
                     decay=0.01)
     all_res.append(res)
 
-    t1 = res.params['decay'].value
-    t1_err = res.params['decay'].stderr
-    text = rf'$T_1$ = {t1*1e3:.3f} $\pm$ {t1_err*1e3:.3f} ms'
-
-    plt.plot(bins, hist,
-             ls='', marker='o', color='cornflowerblue')
-    plt.plot(bins, res.best_fit,
-             'k--')
-    ax = plt.gca()
-    plt.text(0.95, 0.95, text,
-             ha='right', va='top',
-             transform=ax.transAxes)
-    plt.xlabel('Time (s)')
-    plt.ylabel('Counts')
-    plt.ylim((0, 100))
-    # plt.yscale('log')
-
-    plt.tight_layout()
-    plt.savefig(OUTPUT_DIR + '/' + freq_str + '.png')
-    plt.clf()
-
 freqs = np.array(freqs)
 freq_min = min(freqs)
 freqs = freqs - freq_min
@@ -111,9 +108,10 @@ axs[1].plot(freqs, areas,
 axs[2].errorbar(freqs, 1e3*tau, yerr=1e3*tau_err,
                 ls='', marker='o', capsize=3, color='mediumpurple')
 
-axs[0].set_ylabel('Cavity Transmission (A.U.)')
+axs[0].set_title('300 mT PL and Cavity Resonance')
+axs[0].set_ylabel('Cavity Reflection (A.U.)')
 axs[1].set_ylabel('PL Area (A.U.)')
-axs[2].set_ylabel('PL Lifetime (ms)')
+axs[2].set_ylabel('Fitted PL Lifetime (ms)')
 axs[-1].set_xlabel(f'Frequency + {freq_min + AOM_FREQ:.3f} (GHz)')
 axs[2].set_ylim((0, 15))
 axs[0].grid(True)
@@ -121,4 +119,7 @@ axs[1].grid(True)
 axs[2].grid(True)
 
 plt.tight_layout()
-plt.show()
+if SAVE_FIG:
+    plt.savefig(SAVE_NAME)
+else:
+    plt.show()
