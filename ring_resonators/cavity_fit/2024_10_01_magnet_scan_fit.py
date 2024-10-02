@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from lmfit.models import BreitWignerModel, ConstantModel
+from lmfit.models import BreitWignerModel, LinearModel
 import pickle
 
 
@@ -13,7 +13,7 @@ DATA_DIR = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Rin
 CSV_PATH = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators"
             "/New_mounted_device/10mK/magnet_scan_10012024/resonances_scan_10_01_2024.csv")
 OUTPUT_DIR = ("/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs/ring_resonators"
-              "/new_mounted/10mK_magnet_scan/10mK_10012024/all_scans")
+              "/new_mounted/10mK_magnet_scan/10mK_10012024/linear_bg/all_scans")
 FREQ_RANGE = (194821.651, 194822.523)  # unit: GHz
 
 # plotting params
@@ -51,9 +51,10 @@ model_kwargs = {
     'p2_center': 450,
     'p2_sigma': 100,
     'p2_q': 0,
-    'c': 1.5
+    'intercept': 1.5,
+    'slope': 0
 }
-model = (ConstantModel()
+model = (LinearModel()
          + BreitWignerModel(prefix='p1_')
          + BreitWignerModel(prefix='p2_'))
 freq_start = FREQ_RANGE[0]
@@ -83,13 +84,8 @@ for _, row in main_df.iterrows():
                        num=(id_max-id_min))  # unit: MHz
 
     # do fitting
-    model = (ConstantModel()
-             + BreitWignerModel(prefix='p1_')
-             + BreitWignerModel(prefix='p2_'))
     res = model.fit(transmission, x=freq,
-                    p1_amplitude=0.5, p1_center=530, p1_sigma=100, p1_q = 0,
-                    p2_amplitude=0.3, p2_center=450, p2_sigma=100, p2_q = 0,
-                    c=1.5)
+                    **model_kwargs)
 
     # do plotting
     plt.plot(freq, transmission,

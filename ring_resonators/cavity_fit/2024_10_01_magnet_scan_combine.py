@@ -1,13 +1,15 @@
-import os
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from lmfit.models import BreitWignerModel, ConstantModel
 import pickle
 
 
 DATA_FILE = ("/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs/ring_resonators"
-             "/new_mounted/10mK_magnet_scan/10mK_10012024/all_scans/res_data.bin")
+             "/new_mounted/10mK_magnet_scan/10mK_10012024/linear_bg/all_scans/res_data.bin")
+
+# plotting params
+mpl.rcParams.update({'font.sans-serif': 'Helvetica',
+                     'font.size': 12})
 
 
 with open(DATA_FILE, "rb") as f:
