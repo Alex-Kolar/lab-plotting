@@ -4,10 +4,10 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 
-DATA_FILE = "/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Lithium Niobate" \
-            "/Absorption Scan/Chip 4/OSA/mgln_chip4_11_03_23.csv"
-REF_FILE = "/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Lithium Niobate" \
-            "/Absorption Scan/Chip 4/OSA/laser_ref.csv"
+DATA_FILE = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Lithium Niobate"
+             "/Absorption Scan/Chip 1/cln_12212023/absorption_200avg_2.csv")
+REF_FILE = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Lithium Niobate"
+            "/Absorption Scan/Chip 1/cln_12212023/laser_ref_linear_200avg.csv")
 CSV_HEAD = ["wavelength", "power"]
 
 # plotting params
@@ -16,7 +16,7 @@ mpl.rcParams.update({'font.sans-serif': 'Helvetica',
 color = 'cornflowerblue'
 
 # fitting params
-wl_fit_range = (1530, 1534)
+wl_fit_range = (1527, 15)
 
 
 # get data
@@ -60,7 +60,7 @@ plt.plot(wl_to_fit, 1-res.best_fit,
 plt.axvspan(*wl_fit_range,
             alpha=0.2, color='gray', label='Fit Region')
 
-plt.title("Er:MgLN (Chip 4) Transmission Scan")
+plt.title("Er:CLN (Chip 1) Transmission Scan")
 plt.xlabel("Wavelength (nm)")
 plt.ylabel("Normalized Power")
 plt.legend(shadow=True)
