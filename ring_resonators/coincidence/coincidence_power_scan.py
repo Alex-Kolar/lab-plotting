@@ -34,10 +34,10 @@ assert len(counts_on) == len(counts_off) == len(MEAS_POWER)
 df_counts_on = [pd.read_csv(name, sep='\t') for name in counts_on]
 df_counts_off = [pd.read_csv(name, sep='\t') for name in counts_off]
 
-signal_counts_on_avg = [np.mean(df['counts']) for df in df_counts_on]
-signal_counts_off_avg = [np.mean(df['counts']) for df in df_counts_off]
-idler_counts_on_avg = [np.mean(df['counts.1']) for df in df_counts_on]
-idler_counts_off_avg = [np.mean(df['counts.1']) for df in df_counts_off]
+signal_counts_on_avg = np.array([np.mean(df['counts']) for df in df_counts_on])
+signal_counts_off_avg = np.array([np.mean(df['counts']) for df in df_counts_off])
+idler_counts_on_avg = np.array([np.mean(df['counts.1']) for df in df_counts_on])
+idler_counts_off_avg = np.array([np.mean(df['counts.1']) for df in df_counts_off])
 
 
 # plotting of singles data
@@ -99,4 +99,23 @@ ax.legend(shadow=True)
 ax2.legend(shadow=True)
 
 fig.tight_layout()
+plt.show()
+
+
+# determine efficiency
+signal_eff = coinc_real / (signal_counts_on_avg - signal_counts_off_avg)
+idler_eff = coinc_real / (idler_counts_on_avg - idler_counts_off_avg)
+# convert to dB
+# signal_eff = 10*np.log10(signal_eff)
+# idler_eff = 10*np.log10(idler_eff)
+plt.plot(on_chip_power, signal_eff,
+         label='Signal')
+plt.plot(on_chip_power, idler_eff,
+         label='Idler')
+
+plt.legend()
+plt.xlabel("On-Chip Power (mW)")
+plt.ylabel("Ratio of coincidences to singles")
+
+plt.tight_layout()
 plt.show()
