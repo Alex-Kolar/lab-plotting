@@ -4,11 +4,11 @@ This repo contains various scripts I have used for creating plots in the lab. Th
 
 **NOTE:** there may be allowances for data reading from different oscilloscopes/instruments, plotting parameters, etc. Please double check the code before using output results.
 
-## File structure
+## File Structure
 
 There are several subdirectories, each containing various data. The sub-dicrectories are:
 - `eps`: For measurements taken using the SPDC entangled photon source. Largely includes HOM data.
-- `er_yvo`:
+- `er_yvo`: Spectroscopy code relating to the hybrid quantum network project; specifically, Er:YVO
 - `ring_resonators`: For measurements of the in-situ entanglement source project. Contains further subfolders:
   - `alignment`: For viewing data from auto-alignment script; used during cooldown.
   - `cavity_fit`: Fitting of Fano resonances from the resonators.
