@@ -3,13 +3,13 @@ import os
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from lmfit.models import ExponentialModel, ConstantModel
+from lmfit.models import ExponentialModel, ConstantModel, GaussianModel
 
 
 DATA_DIR = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators"
             "/New_mounted_device/10mK/pl_09042024")
 OUTPUT_DIR = ("/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs/ring_resonators"
-              "/new_mounted/10mK_pl/09042024")
+              "/new_mounted/10mK_pl/all_fitted_decay/09042024")
 OUTPUT_DIR_FINAL = ("/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs"
                     "/ring_resonators/new_mounted/10mK_pl/600mT_area_AOM_orange.svg")
 AOM_FREQ = 0.6  # unit: GHz
@@ -25,9 +25,10 @@ mpl.rcParams.update({'font.sans-serif': 'Helvetica',
 color = 'cornflowerblue'
 bbox = dict(boxstyle='square', facecolor='white', alpha=1, edgecolor='black')
 SAVE_FITS = False
-SAVE_FIG = True
+SAVE_FIG = False
 
 
+# fit all PL data
 pl_files = glob.glob(DATA_DIR + "/*.npz")
 
 model = ExponentialModel() + ConstantModel()
@@ -74,9 +75,15 @@ for file in pl_files:
         plt.savefig(OUTPUT_DIR + '/' + freq_str + '.png')
         plt.clf()
 
+# sorting and subtracting
 freqs = np.array(freqs)
 freq_min = min(freqs)
 freqs = freqs - freq_min
+all_res = [res for _, res in sorted(zip(freqs, all_res))]
+laser_pulses = [pulse for _, pulse in sorted(zip(freqs, laser_pulses))]
+areas = [area for _, area in sorted(zip(freqs, areas))]
+freqs.sort()
+
 
 # get data from fits
 amplitudes = np.fromiter(map(lambda x: x.params['amplitude'].value, all_res), float)
@@ -86,6 +93,14 @@ bg_err = np.fromiter(map(lambda x: x.params['c'].stderr, all_res), float)
 tau = np.fromiter(map(lambda x: x.params['decay'].value, all_res), float)
 tau_err = np.fromiter(map(lambda x: x.params['decay'].stderr, all_res), float)
 
+# fit total pl spectrum to Gaussian
+model = GaussianModel() + ConstantModel()
+inhomog_res = model.fit(areas, x=freqs,
+                        amplitude=12000, sigma=2, center=4,
+                        c=16000)
+print(inhomog_res.fit_report())
+print(f"Gaussian FWHM: {inhomog_res.params['fwhm'].value} GHz")
+
 
 # plotting of PL
 plt.errorbar(freqs, areas,
@@ -93,7 +108,7 @@ plt.errorbar(freqs, areas,
 plt.title('600 mT PL')
 plt.xlabel(f'Frequency + {freq_min + AOM_FREQ:.3f} (GHz)')
 plt.ylabel('PL Area (A.U.)')
-plt.grid(True)
+plt.xlim((0, 8))
 
 plt.tight_layout()
 if SAVE_FIG:
@@ -136,6 +151,19 @@ plt.axvline(max_freq + START_SWEEP, color='r', ls='--')
 plt.axvline(max_freq + END_SWEEP, color='r', ls='--')
 plt.text(x=max_freq, y=min(areas),
          s=f'{freq_min + AOM_FREQ + max_freq:.3f} GHz')
+plt.xlabel(f'Frequency + {freq_min + AOM_FREQ:.3f} (GHz)')
+plt.ylabel('PL Area (A.U.)')
+plt.grid(True)
+
+plt.tight_layout()
+plt.show()
+
+
+# plotting of pl with gaussian fit
+plt.errorbar(freqs, areas,
+             ls='', marker='o', capsize=3, color='cornflowerblue')
+plt.plot(freqs, inhomog_res.best_fit,
+         ls='--', color='k')
 plt.xlabel(f'Frequency + {freq_min + AOM_FREQ:.3f} (GHz)')
 plt.ylabel('PL Area (A.U.)')
 plt.grid(True)
