@@ -7,9 +7,9 @@ from lmfit.models import ExponentialModel, ConstantModel
 
 
 DATA_DIR = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators"
-            "/New_mounted_device/10mK/PL_scan_2024_09_06")
+            "/New_mounted_device/10mK/pl_09062024")
 OUTPUT_DIR = ("/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs/ring_resonators"
-              "/new_mounted/10mK_pl/09062024")
+              "/new_mounted/10mK_pl/all_fitted_decay/09062024")
 CUTOFF_IDX = 5
 
 # plotting params

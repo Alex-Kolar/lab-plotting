@@ -96,9 +96,11 @@ with open(os.path.join(OUTPUT_DIR, save_name_data), "wb") as f:
 # plotting of PL
 plt.errorbar(freqs, area_fit, area_err,
              ls='', marker='o', capsize=3, color='cornflowerblue')
+plt.title('PL at 1000 mT')
 plt.xlabel(f'Frequency + {freq_min:.3f} (GHz)')
 plt.ylabel('Fitted PL Area (A.U.)')
-plt.grid(True)
+# plt.grid(True)
+plt.xlim((3, 10))
 plt.ylim((0, 1.2))
 
 # lines for pumping region
@@ -113,9 +115,10 @@ plt.show()
 # plotting of PL
 plt.errorbar(freqs, amplitudes, yerr=amplitude_err,
              ls='', marker='o', capsize=3, color='cornflowerblue')
+plt.title('PL at 1000 mT')
 plt.xlabel(f'Frequency + {freq_min:.3f} (GHz)')
 plt.ylabel('Fitted PL Amplitude (A.U.)')
-plt.grid(True)
+# plt.grid(True)
 plt.ylim((0, 120))
 
 plt.tight_layout()
@@ -131,6 +134,7 @@ axs[1].plot(freqs, laser_pulses,
 axs[2].errorbar(freqs, 1e3*tau, yerr=1e3*tau_err,
                 ls='', marker='o', capsize=3, color='mediumpurple')
 
+axs[0].set_title('PL at 1000 mT')
 axs[0].set_ylabel('Fitted Background (A.U.)')
 axs[1].set_ylabel('Laser Counts')
 axs[2].set_ylabel('PL Lifetime (ms)')
