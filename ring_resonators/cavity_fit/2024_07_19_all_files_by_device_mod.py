@@ -25,7 +25,7 @@ mpl.rcParams.update({'font.sans-serif': 'Helvetica',
                      'font.size': 12})
 color = 'cornflowerblue'
 
-PLOT_ALL_RES = True  # plot and save all intermediate results
+PLOT_ALL_RES = False  # plot and save all intermediate results
 
 
 # moving average function for peaks
@@ -107,16 +107,17 @@ for _, row in main_df.iterrows():
     wl = 3e8 / (freq_start * 1e9)  # unit: m
     wl *= 1e9  # unit: nm
 
-    plt.plot(freq, transmission, color=color,
-             label='Data')
-    plt.plot(freq, res.init_fit, 'r--',
-             label='Initial Fit')
-    plt.plot(freq, res.best_fit, 'k--',
-             label='Fit')
-
-    # # peaks for testing
-    # plt.plot(freq[peaks_to_keep], transmission[peaks_to_keep],
-    #          'x', color='k')
+    if len(peaks_to_keep) > 0:
+        main_center = res.params['p0_center'].value
+        plt.plot(freq - main_center, transmission, color=color,
+                 label='Data')
+        plt.plot(freq - main_center, res.best_fit, 'k--',
+                 label='Fit')
+    else:
+        plt.plot(freq, transmission, color=color,
+                 label='Data')
+        plt.plot(freq, res.best_fit, 'k--',
+                 label='Fit')
 
     # extract data
     all_center_curr = []
@@ -132,9 +133,14 @@ for _, row in main_df.iterrows():
         text = rf"$\Gamma$: {width:.3f} MHz"
         text += "\n"
         text += f"Q: {q:.3}"
-        plt.text(center + 500,
-                 transmission[peaks_to_keep[i]] - 0.1,
-                 text)
+        if i == 0:
+            alignment = 'right'
+        else:
+            alignment = 'left'
+        plt.text(center - main_center + ((2*i - 1) * 200),
+                 transmission[peaks_to_keep[i]],
+                 text,
+                 ha=alignment)
 
     if device in center_by_device:
         center_by_device[device] += all_center_curr
@@ -147,14 +153,15 @@ for _, row in main_df.iterrows():
     plt.title(f"Device {device} {wl:.3f} nm ({freq_start * 1e-3:.3f} THz) scan")
     plt.legend(shadow=True)
     plt.xlabel("Detuning (MHz)")
-    plt.ylabel("Transmission (A.U.)")
-    plt.grid(True)
+    plt.ylabel("Cavity Reflection (A.U.)")
+    # plt.grid(True)
+    plt.xlim((-1000, 1000))
 
     plt.tight_layout()
 
     save_name = f"D{device}_{wl:.3f}"
     save_name = save_name.replace(".", "_")
-    save_name += ".png"
+    save_name += ".svg"
     output_path = os.path.join(OUTPUT_DIR, str(device))
     if not os.path.exists(output_path):
         os.makedirs(output_path)
