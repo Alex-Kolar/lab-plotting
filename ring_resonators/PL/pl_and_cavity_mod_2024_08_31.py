@@ -24,12 +24,12 @@ CUTOFF_IDX = 5
 
 # plotting params
 mpl.rcParams.update({'font.sans-serif': 'Helvetica',
-                     'font.size': 12})
+                     'font.size': 14})
 color = 'cornflowerblue'
 bbox = dict(boxstyle='square', facecolor='white', alpha=1, edgecolor='black')
-SAVE_FIG = False
+SAVE_FIG = True
 SAVE_NAME = ("/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs"
-             "/ring_resonators/new_mounted/10mK_pl/300mT_area_pl_and_cavity.svg")
+             "/ring_resonators/new_mounted/10mK_pl/300mT_area_pl_and_cavity.pdf")
 
 
 # get cavity calibration data
@@ -98,7 +98,8 @@ area_fit = amplitudes * tau
 area_err = area_fit * np.sqrt((amplitude_err / amplitudes) ** 2 + (tau_err / tau) ** 2)
 
 # plotting
-fig, axs = plt.subplots(3, 1, sharex=True, figsize=(8, 8))
+fig, axs = plt.subplots(2, 1, sharex=True)
+ax1_r = axs[1].twinx()
 # cavity transmission
 axs[0].plot(freq_cavity + (FREQ_START - freq_min - AOM_FREQ), transmission,
             color='cornflowerblue')
@@ -106,18 +107,18 @@ axs[0].plot(freq_cavity + (FREQ_START - freq_min - AOM_FREQ), transmission,
 axs[1].errorbar(freqs, area_fit, yerr=area_err,
                 ls='', marker='o', capsize=3, color='coral')
 # T1 lifetime
-axs[2].errorbar(freqs, 1e3*tau, yerr=1e3*tau_err,
-                ls='', marker='o', capsize=3, color='mediumpurple')
+ax1_r.errorbar(freqs, 1e3*tau, yerr=1e3*tau_err,
+               ls='', marker='^', capsize=3, color='mediumpurple')
 
 axs[0].set_title('300 mT PL and Cavity Resonance')
 axs[0].set_ylabel('Cavity Reflection (A.U.)')
-axs[1].set_ylabel('PL Area (A.U.)')
-axs[2].set_ylabel('Fitted PL Lifetime (ms)')
+axs[1].set_ylabel('PL Area (A.U.)', color='coral')
+ax1_r.set_ylabel('Fitted PL Lifetime (ms)', color='mediumpurple')
 axs[-1].set_xlabel(f'Frequency + {freq_min + AOM_FREQ:.3f} (GHz)')
-axs[2].set_ylim((0, 15))
-axs[2].set_xlim((2, 7))
+ax1_r.set_ylim((0, 15))
+axs[-1].set_xlim((2, 7))
 
-plt.tight_layout()
+plt.tight_layout(rect=(0.07, 0, 1, 1))
 if SAVE_FIG:
     plt.savefig(SAVE_NAME)
 else:

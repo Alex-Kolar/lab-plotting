@@ -92,6 +92,8 @@ bgs = np.fromiter(map(lambda x: x.params['c'].value, all_res), float)
 bg_err = np.fromiter(map(lambda x: x.params['c'].stderr, all_res), float)
 tau = np.fromiter(map(lambda x: x.params['decay'].value, all_res), float)
 tau_err = np.fromiter(map(lambda x: x.params['decay'].stderr, all_res), float)
+area_fit = amplitudes * tau
+area_err = area_fit * np.sqrt((amplitude_err / amplitudes) ** 2 + (tau_err / tau) ** 2)
 
 # fit total pl spectrum to Gaussian
 model = GaussianModel() + ConstantModel()
@@ -103,12 +105,13 @@ print(f"Gaussian FWHM: {inhomog_res.params['fwhm'].value} GHz")
 
 
 # plotting of PL
-plt.errorbar(freqs, areas,
-             ls='', marker='o', capsize=3, color='coral')
-plt.title('600 mT PL')
-plt.xlabel(f'Frequency + {freq_min + AOM_FREQ:.3f} (GHz)')
+plt.errorbar(freqs, area_fit, area_err,
+             ls='', marker='o', capsize=3, color='cornflowerblue')
+plt.title('PL at 600 mT')
+plt.xlabel(f'Frequency + {freq_min:.3f} (GHz)')
 plt.ylabel('PL Area (A.U.)')
-plt.xlim((0, 8))
+plt.xlim((0.5, 7.5))
+plt.ylim((0, 0.8))
 
 plt.tight_layout()
 if SAVE_FIG:
