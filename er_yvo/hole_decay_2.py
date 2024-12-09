@@ -33,13 +33,13 @@ PLOT_BG = False
 PLOT_DECAY = True
 
 # plotting output control
-PLOT_ALL_SCANS = False  # plot all scans with background average
+PLOT_ALL_SCANS = True  # plot all scans with background average
 PLOT_ALL_PEAKS = True  # plot all peak transmissions, with fitted double-decay exponential
 PLOT_ALL_AMPLITUDES = False  # plot all peaks minus minimum of transmission scan, with fitted double-decay
 PLOT_ALL_HEIGHTS = False  # plot all individually fitted hole heights, with fitted double-decay
 PLOT_STACKED_SCANS = False  # plot all peak transmissions, with color gradient and with no t_wait offset
 PLOT_SINGLE_SCAN = False  # plot an individual oscilloscope scan (for troubleshooting)
-PLOT_SINGLE_SCAN_HOLES = False  # plot an individual transmission scan, with fitted hole shapes
+PLOT_SINGLE_SCAN_HOLES = True  # plot an individual transmission scan, with fitted hole shapes
 PLOT_LINEWIDTHS = True  # plot fitted linewidth of the hole transmission as a function of time
 PLOT_BASELINE = False  # plot fitted transmission baseline as a function of time
 PLOT_AREA = True  # plot fitted area of hole as function of time
@@ -539,8 +539,8 @@ if PLOT_SINGLE_SCAN_HOLES:
                      dfs[i]["Volts"][all_starts[i]:],
                      color=color1, label='Data')
 
-        for j, (time, res) in enumerate(zip(all_hole_times[i],
-                                            all_hole_results[i])):
+        for j, (time, res) in enumerate(zip(all_hole_times_2d[i],
+                                            all_hole_results_2d[i])):
             if j == 0:
                 plt.plot(time, res.best_fit,
                          'k--', label='Fit')
