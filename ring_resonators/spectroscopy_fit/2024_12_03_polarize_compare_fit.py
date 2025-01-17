@@ -44,7 +44,6 @@ df_before = pd.read_csv(BEFORE_DATA, header=10, skiprows=[11])
 ramp = df_before['CH1'].astype(float).to_numpy()
 transmission_before = df_before['CH2'].astype(float).to_numpy()
 transmission_before -= off_level
-print(off_level)
 
 id_min = np.argmin(ramp)
 id_max = np.argmax(ramp)
@@ -64,9 +63,7 @@ df_after = pd.read_csv(AFTER_DATA, header=10, skiprows=[11])
 
 ramp = df_after['CH1'].astype(float).to_numpy()
 transmission_after = df_after['CH2'].astype(float).to_numpy()
-print(min(transmission_after))
 transmission_after -= off_level
-print(min(transmission_after))
 
 id_min = np.argmin(ramp)
 id_max = np.argmax(ramp)
@@ -88,6 +85,7 @@ model = VoigtModel() + ConstantModel()
 res = model.fit(od_after[idx_to_fit], x=freq_after[idx_to_fit],
                 center=3.55, sigma=0.25, c=0.2)
 print(res.fit_report())
+print(f"Center frequency: {START_FREQ_AFTER + res.params['center'].value}")
 
 
 # plot optical depth and pumping
