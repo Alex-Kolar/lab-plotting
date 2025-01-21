@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from matplotlib.collections import LineCollection
 from lmfit.models import BreitWignerModel, ConstantModel
 from scipy.signal import find_peaks
 import pickle
