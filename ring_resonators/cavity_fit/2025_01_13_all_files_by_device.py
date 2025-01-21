@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from matplotlib.collections import LineCollection
 from lmfit.models import BreitWignerModel, ConstantModel
 from scipy.signal import find_peaks
 import pickle
@@ -24,8 +25,9 @@ PEAK_THRESH = 0.85
 mpl.rcParams.update({'font.sans-serif': 'Helvetica',
                      'font.size': 12})
 color = 'cornflowerblue'
+colormap = mpl.colormaps['Purples']
 
-PLOT_ALL_RES = True  # plot and save all intermediate results
+PLOT_ALL_RES = False  # plot and save all intermediate results
 
 
 # moving average function for peaks
@@ -54,6 +56,7 @@ num_rows = len(main_df['FileNumber'])
 # save specific params for plotting combined results
 center_by_device = {}
 q_by_device = {}
+contrast_by_device = {}
 
 for _, row in main_df.iterrows():
     # get info
@@ -122,13 +125,24 @@ for _, row in main_df.iterrows():
     print("\t\tCenter Frequencies:")
     all_center_curr = []
     all_q_curr = []
+    all_contrast_curr = []
     for i in range(len(peaks_to_keep)):
         width = res.params[f'p{i}_sigma'].value  # unit: MHz
         center = res.params[f'p{i}_center'].value  # unit: MHz
+        amplitude = res.params[f'p{i}_amplitude'].value
+        constant = res.params[f'c'].value
+
+        # get q
         freq_light = (freq_start * 1e3) + center  # unit: MHz
         q = freq_light / width
+
+        # calculate contrast
+        contrast = amplitude / (amplitude + constant)
+
+        # save data
         all_center_curr.append(freq_light)
         all_q_curr.append(q)
+        all_contrast_curr.append(contrast)
 
         text = rf"$\Gamma$: {width:.3f} MHz"
         text += "\n"
@@ -142,9 +156,11 @@ for _, row in main_df.iterrows():
     if device in center_by_device:
         center_by_device[device] += all_center_curr
         q_by_device[device] += all_q_curr
+        contrast_by_device[device] += all_contrast_curr
     else:
         center_by_device[device] = all_center_curr
         q_by_device[device] = all_q_curr
+        contrast_by_device[device] = all_contrast_curr
 
 
     plt.title(f"Device {device} {wl:.3f} nm ({freq_start * 1e-3:.3f} THz) scan")
@@ -190,14 +206,26 @@ plt.show()
 
 
 # make plot of q versus freq for each device
+# coloring is based on coupling
 for device in center_by_device:
     centers = np.array(center_by_device[device])
     centers *= 1e-6  # convert to THz
-    plt.stem(centers, q_by_device[device],
-             linefmt=color, markerfmt=color, basefmt='k')
+    qs = np.array(q_by_device[device])
+    contrasts = np.array(contrast_by_device[device])
+
+    # colored stem plot
+    # collect lines
+    for center, q, contrast in zip(centers, qs, contrasts):
+        color_samp = colormap(contrast)
+        plt.plot([center, center], [0, q], color=color_samp)
+    # do scatter part
+    plt.scatter(centers, qs, c=contrasts,
+                cmap=colormap, vmin=0, vmax=1)
+    plt.axhline(y=0, color='k')
     plt.title(f"Device {device}")
     plt.xlabel("Frequency (THz)")
     plt.ylabel("Q Factor")
+    plt.colorbar(label="Contrast")
 
     plt.tight_layout()
     plt.show()
