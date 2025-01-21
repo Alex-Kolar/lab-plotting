@@ -220,7 +220,7 @@ for device in center_by_device:
         plt.plot([center, center], [0, q], color=color_samp)
     # do scatter part
     plt.scatter(centers, qs, c=contrasts,
-                cmap=colormap, vmin=0, vmax=1)
+                cmap=colormap, vmin=0, vmax=1, zorder=3)
     plt.axhline(y=0, color='k')
     plt.title(f"Device {device}")
     plt.xlabel("Frequency (THz)")
