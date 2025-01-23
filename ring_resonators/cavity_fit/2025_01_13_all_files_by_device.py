@@ -121,6 +121,9 @@ for _, row in main_df.iterrows():
     #          'x', color='k')
 
     # extract data
+    # get total background for contrast
+    total_amp = sum([res.params[f'p{i}_amplitude'].value for i in range(len(peaks_to_keep))])
+
     print("\t\tCenter Frequencies:")
     all_center_curr = []
     all_q_curr = []
@@ -136,7 +139,7 @@ for _, row in main_df.iterrows():
         q = freq_light / width
 
         # calculate contrast
-        contrast = amplitude / (amplitude + constant)
+        contrast = amplitude / (total_amp + constant)
 
         # save data
         all_center_curr.append(freq_light)
