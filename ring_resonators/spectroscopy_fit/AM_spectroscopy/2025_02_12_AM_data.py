@@ -83,7 +83,7 @@ ax2.set_xlabel(f'Frequency - {FREQ_MOD} (GHz)')
 ax1.set_ylabel('Optical Depth')
 ax2.set_ylabel('Modulation Response (dB)')
 
-# plt.xlim(2, 5)
+plt.xlim(3, 6)
 
 plt.tight_layout()
 plt.show()
