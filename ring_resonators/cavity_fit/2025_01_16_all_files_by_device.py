@@ -16,6 +16,12 @@ CSV_PATH = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Rin
 OUTPUT_DIR = ("/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs/ring_resonators"
               "/new_mounted_no_erbium/room_temp_cavity/room_temp_01162025/test")
 
+# parameters for the device (to use for power calculation)
+n_eff = 2.18
+L = np.pi * 440 * 1e-6  # unit: m
+c = 3e8  # unit: m/s
+gamma = 1  # non-linear coefficient (unit:
+
 # fitting params
 SMOOTHING = 21
 PEAK_THRESH = 0.85
@@ -24,6 +30,8 @@ PEAK_THRESH = 0.85
 mpl.rcParams.update({'font.sans-serif': 'Helvetica',
                      'font.size': 12})
 color = 'cornflowerblue'
+color_factor = 'coral'
+color_rate = 'lightsage'
 colormap = mpl.colormaps['Purples']
 
 PLOT_ALL_RES = False  # plot and save all intermediate results
@@ -228,6 +236,80 @@ for device in center_by_device:
     plt.xlabel("Frequency (THz)")
     plt.ylabel("Q Factor")
     plt.colorbar(label="Contrast")
+
+    plt.tight_layout()
+    plt.show()
+
+
+# make plot of on-chip power and pair rate versus frequency for each device
+for device in center_by_device:
+    centers = np.array(center_by_device[device])
+    centers *= 1e-6  # convert to THz
+    qs = np.array(q_by_device[device])
+    contrasts = np.array(contrast_by_device[device])
+
+    # calculate |kappa|^2 and |t|^2 using Q
+    lambda_0 = c / (centers * 1e12)  # unit: m
+    kappa_squared = (np.pi * L * n_eff) / (lambda_0 * qs)
+    t_squared = 1 - kappa_squared
+    t = np.sqrt(t_squared)
+
+    # calculate alpha (two possible values)
+    norm_trans = 1 - contrasts
+    alpha_1 = (norm_trans + t) / (norm_trans*t + 1)
+    alpha_2 = (norm_trans - t) / (norm_trans*t - 1)
+
+    # calculate normalized power on device
+    norm_power_1 = ((alpha_1 ** 2) * (1 - t_squared)) / ((1 - alpha_1 * t) ** 2)
+    norm_power_2 = ((alpha_2 ** 2) * (1 - t_squared)) / ((1 - alpha_2 * t) ** 2)
+
+    # calculate photons per second generated on sideband
+    n_photons_1 = gamma * (norm_power_1 ** 3) * (c * L) / (2 * n_eff)
+    n_photons_2 = gamma * (norm_power_1 ** 3) * (c * L) / (2 * n_eff)
+    # scale by efficiencies
+    eta_1 = (1 - t_squared) / (1 - ((alpha_1 ** 2) * t_squared))
+    eta_2 = (1 - t_squared) / (1 - ((alpha_2 ** 2) * t_squared))
+    n_photons_1 *= (eta_1 ** 2)
+    n_photons_2 *= (eta_2 ** 2)
+
+    plt.stem(centers, norm_power_1,
+             linefmt=color_factor, markerfmt=color_factor, basefmt='k')
+    plt.axhline(y=0, color='k')
+    plt.title(f"Device {device} Normalized Power (Solution 1)")
+    plt.xlabel("Frequency (THz)")
+    plt.ylabel(r"$|a_2/a_1|^2$")
+
+    plt.tight_layout()
+    plt.show()
+
+    plt.stem(centers, norm_power_2,
+             linefmt=color_factor, markerfmt=color_factor, basefmt='k')
+    plt.axhline(y=0, color='k')
+    plt.title(f"Device {device} Normalized Power (Solution 2)")
+    plt.xlabel("Frequency (THz)")
+    plt.ylabel(r"$|a_2/a_1|^2$")
+
+    plt.tight_layout()
+    plt.show()
+
+    plt.stem(centers, n_photons_1,
+             linefmt=color_rate, markerfmt=color_rate, basefmt='k')
+    plt.axhline(y=0, color='k')
+    plt.title(f"Device {device} Estimated Pair Rate (Solution 1)")
+    plt.xlabel("Frequency (THz)")
+    plt.ylabel(r"Pairs per second")
+    plt.yscale('log')
+
+    plt.tight_layout()
+    plt.show()
+
+    plt.stem(centers, n_photons_2,
+             linefmt=color_rate, markerfmt=color_rate, basefmt='k')
+    plt.axhline(y=0, color='k')
+    plt.title(f"Device {device} Estimated Pair Rate (Solution 2)")
+    plt.xlabel("Frequency (THz)")
+    plt.ylabel(r"Pairs per second")
+    plt.yscale('log')
 
     plt.tight_layout()
     plt.show()
