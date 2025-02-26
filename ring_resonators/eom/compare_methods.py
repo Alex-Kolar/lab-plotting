@@ -31,3 +31,15 @@ plt.grid(True)
 
 plt.tight_layout()
 plt.show()
+
+
+plt.plot(phase_data['Freq'] / 1e6, phase_data['Amp'],
+         color='coral')
+
+plt.title("Laser Burn Pulse")
+plt.xlabel("Detuning from Carrier (MHz)")
+plt.ylabel("Power (dBm)")
+plt.xlim(95, 105)
+
+plt.tight_layout()
+plt.show()
