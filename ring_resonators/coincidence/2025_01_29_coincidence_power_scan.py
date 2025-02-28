@@ -6,6 +6,8 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from lmfit import Model
 
+from ring_resonators.cavity_fit.cavity_metrics import g_2_no_delta
+
 
 DATA_DIR = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators"
             "/New_mounted_device/300K_no_erbium/coincidence/01292025_pair_gen_power_scan")
@@ -17,12 +19,11 @@ color = 'cornflowerblue'
 color_coincidence = 'coral'
 
 
-# fitting function for coincidences
-def g_2_no_delta(x, x0, amplitude, kappa, g):
-    x = np.abs(x - x0)
-    exp_term = g*np.sinh(g*x) + (kappa/2)*np.cosh(g*x)
-    g_2 = 1 + (np.exp(-kappa * x) / (g ** 2)) * (np.abs(exp_term) ** 2)
-    return amplitude * g_2
+# efficiencies
+efficiency_laser_coupling = 0.5
+efficiency_spectrometer = 0.5
+efficiency_chip_coupling = 0.05413
+total_efficiency = efficiency_laser_coupling * efficiency_spectrometer * efficiency_chip_coupling
 
 
 # fitting function versus power
@@ -48,6 +49,7 @@ for filename in coincidence_files:
     file_info = file_str.split('_')  # 'pairs', XXmW, Xmin
     power = float(file_info[1][:2])
     int_time = float(file_info[2][:1])
+    power *= total_efficiency
     powers.append(power)
     int_times.append(int_time)
 
@@ -88,7 +90,11 @@ all_amps = [res.params['amplitude'].value for res in all_res]
 all_amps_err = [res.params['amplitude'].stderr for res in all_res]
 all_kappa = []
 all_kappa_err = []
+all_g = []
+all_g_err = []
+all_integral = []
 for res in all_res:
+    # extract kappa data
     kappa = res.params['kappa'].value  # unit: 2*pi*GHz
     kappa /= 2*np.pi
     kappa *= 1e3  # unit: MHz
@@ -98,11 +104,35 @@ for res in all_res:
     all_kappa.append(kappa)
     all_kappa_err.append(kappa_err)
 
+    # extract g data
+    g = res.params['g'].value  # unit: 2*pi*GHz
+    g /= 2*np.pi
+    g *= 1e3  # unit: MHz
+    g_err = res.params['g'].stderr
+    g_err /= 2*np.pi
+    g_err *= 1e3
+    all_g.append(g)
+    all_g_err.append(g_err)
+
+    # extract integral (numerically)
+    only_coincidence = res.best_fit - res.params['amplitude'].value
+    times = res.userkws['x']
+    time_diff = times[1] - times[0]  # assume uniform difference
+    integral = np.sum(only_coincidence[:-1]) * time_diff
+    all_integral.append(integral)
+
+
 # fit amplitudes versus pump power
 model = Model(quadratic)
 res = model.fit(all_amps, x=powers,
                 a=0.16)
 print(res.fit_report())
+
+
+# fit areas versus pump power
+res_area = model.fit(all_integral, x=powers,
+                     a=0.16)
+print(res_area.fit_report())
 
 
 # plot of amplitudes versus pump power
@@ -131,6 +161,31 @@ plt.errorbar(powers, all_kappa, yerr=all_kappa_err,
 plt.title('Coincidence Width versus Pump Power')
 plt.xlabel('Pump Power (mW)')
 plt.ylabel(r'Coincidence Fit $\kappa$ (MHz)')
+plt.legend(shadow=True)
+
+plt.tight_layout()
+plt.show()
+
+
+# plot of widths versus pump power
+fig, ax = plt.subplots()
+
+plt.errorbar(powers, all_integral,
+             color='mediumpurple', ls='', marker='o', capsize=3,
+             label='Fitted Data')
+plt.plot(powers_for_fit, quadratic(powers_for_fit, **res_area.best_values),
+         color='k', ls='--',
+         label='Fitted Trend')
+
+# add text
+label = rf'$\gamma$ = {res_area.params['a'].value:.3f} $\pm$ {res_area.params['a'].stderr:.3f}'
+t = ax.text(0.95, 0.05, label,
+            horizontalalignment='right', verticalalignment='bottom')
+t.set_transform(ax.transAxes)
+
+plt.title('Coincidence Area versus Pump Power')
+plt.xlabel(r'Pump Power (mW)')
+plt.ylabel(r'Coincidence Area')
 plt.legend(shadow=True)
 
 plt.tight_layout()
