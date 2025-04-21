@@ -29,7 +29,7 @@ def calculate_gamma(centers, qs, contrasts, a,
 
 def calculate_enhancement(centers, qs, contrasts,
                           L=(np.pi*220e-6), n_eff=2.18):
-    """Calculate power enhancement factor |F_0\^2.
+    """Calculate power enhancement factor |F_0|^2.
 
     Args:
         centers (np.ndarray): frequency centers of resonances, in THz.
@@ -47,8 +47,8 @@ def calculate_enhancement(centers, qs, contrasts,
 
     # calculate alpha (two possible values)
     norm_trans = 1 - contrasts
-    alpha_1 = (norm_trans + t) / (norm_trans * t + 1)
-    alpha_2 = (norm_trans - t) / (norm_trans * t - 1)
+    alpha_1 = (t - np.sqrt(norm_trans)) / (1 - (t * np.sqrt(norm_trans)))
+    alpha_2 = (t + np.sqrt(norm_trans)) / (1 + (t * np.sqrt(norm_trans)))
 
     # calculate normalized power (field enhancement squared) on device
     norm_power_1 = ((alpha_1 ** 2) * (1 - t_squared)) / ((1 - alpha_1 * t) ** 2)
@@ -58,7 +58,7 @@ def calculate_enhancement(centers, qs, contrasts,
 
 
 def calculate_rates(centers, qs, contrasts,
-                    L=(np.pi*220e-6), n_eff=2.18, gamma=1.66e-5, power=1):
+                    L=(np.pi*220e-6), n_eff=2.18, gamma=2.55e-6, power=1):
     """Calculate the expected pair rate of generated photons for SiC ring resonators.
 
     First calculates the field enhancement factor F_0, based on measured Q and contrast.
@@ -72,7 +72,7 @@ def calculate_rates(centers, qs, contrasts,
         L (float): cavity circumference, in m (default pi * 220e-6).
         n_eff (float): effective cavity index (default 2.18).
             Default is calculated based on MATLAB simulation.
-        gamma (float): nonlinearity coefficient (default 884.012153).
+        gamma (float): nonlinearity coefficient (default 2.55e-6).
             Default is calculated based on fit of power scan.
         power (float): pump power, default 1 (in mW).
 
@@ -90,8 +90,8 @@ def calculate_rates(centers, qs, contrasts,
 
     # calculate alpha (two possible values)
     norm_trans = 1 - contrasts
-    alpha_1 = (norm_trans + t) / (norm_trans*t + 1)
-    alpha_2 = (norm_trans - t) / (norm_trans*t - 1)
+    alpha_1 = (t - np.sqrt(norm_trans)) / (1 - (t * np.sqrt(norm_trans)))
+    alpha_2 = (t + np.sqrt(norm_trans)) / (1 + (t * np.sqrt(norm_trans)))
 
     # calculate normalized power (field enhancement squared) on device
     norm_power_1 = ((alpha_1 ** 2) * (1 - t_squared)) / ((1 - alpha_1 * t) ** 2)

@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from lmfit import Model
 from lmfit.models import ConstantModel, BreitWignerModel
 
-from ring_resonators.cavity_fit.cavity_metrics import g_2_no_delta, calculate_gamma, calculate_rates
+from ring_resonators.cavity_fit.cavity_metrics import *
 
 
 # coincidence data
@@ -32,11 +32,17 @@ color = 'cornflowerblue'
 color_coincidence = 'coral'
 PLOT_ALL_COINCIDENCE = False  # plot all fitted coincidence curves
 
+
 # efficiencies
+# input laser light
 efficiency_laser_coupling = 0.5
 efficiency_spectrometer = 0.5
 efficiency_chip_coupling = 0.05413
 total_efficiency = efficiency_laser_coupling * efficiency_spectrometer * efficiency_chip_coupling
+# efficiencies for output light
+efficiency_52 = efficiency_chip_coupling * 0.7274 * 0.4532  # path taken by photons at 195.2 THz
+efficiency_48 = efficiency_chip_coupling * 0.4790 * 0.9260  # path taken by photons at 194.8 THz
+efficiency_pairs = efficiency_48 * efficiency_52
 
 
 # fitting function versus power
@@ -130,43 +136,17 @@ for res in all_res:
 
     # extract integral (numerically)
     only_coincidence = res.best_fit - res.params['amplitude'].value  # everything above bg
-    times = res.userkws['x']
-    time_diff = times[1] - times[0]  # assume uniform difference
-    integral = np.sum(only_coincidence[:-1]) * time_diff  # riemann sum
+    integral = np.sum(only_coincidence[:-1])  # riemann sum
     integral /= integration_time  # convert to pairs/s
+    integral /= (efficiency_48 * efficiency_52)  # convert to on-chip pair rate
     all_integral.append(integral)
 
 
-# fit amplitudes versus pump power
-model = Model(quadratic)
-res = model.fit(all_amps, x=powers,
-                a=0.16)
-print("Quadratic Fitting:")
-print(res.fit_report())
-
-
 # fit areas versus pump power
+model = Model(quadratic)
 res_area = model.fit(all_integral, x=powers,
                      a=0.16)
 print(res_area.fit_report())
-
-
-# plot of amplitudes versus pump power
-powers_for_fit = np.linspace(min(powers), max(powers), 100)
-plt.errorbar(powers, all_amps, yerr=all_amps_err,
-             color='cornflowerblue', ls='', marker='o', capsize=3,
-             label='Fitted Data')
-plt.plot(powers_for_fit, quadratic(powers_for_fit, **res.best_values),
-         color='k', ls='--',
-         label='Fitted Trend')
-
-plt.title('Coincidences versus Pump Power')
-plt.xlabel('Pump Power (mW)')
-plt.ylabel('Coincidence Fit Amplitude')
-plt.legend(shadow=True)
-
-plt.tight_layout()
-plt.show()
 
 
 # plot of widths versus pump power
@@ -184,6 +164,7 @@ plt.show()
 
 
 # plot of areas versus pump power
+powers_for_fit = np.linspace(min(powers), max(powers), 100)
 fig, ax = plt.subplots()
 
 plt.errorbar(powers, all_integral,
@@ -201,7 +182,7 @@ t.set_transform(ax.transAxes)
 
 plt.title('Coincidence Area versus Pump Power')
 plt.xlabel(r'Pump Power (mW)')
-plt.ylabel(r'Coincidence Area')
+plt.ylabel(r'Coincidence Area (pairs/s)')
 plt.legend(shadow=True)
 
 plt.tight_layout()
@@ -257,14 +238,24 @@ constant = res.params[f'c'].value
 freq_light = SCAN_RANGE[0] + center  # unit: GHz
 q = freq_light / width
 contrast = amplitude / (amplitude + constant)
+print("\n")
+print(f"Cavity Q: {q}")
+print(f"Cavity contrast: {contrast}")
 
+power_enhance_1, power_enhance_2 = calculate_enhancement(freq_light*1e-3, q, contrast,
+                                                         L=L, n_eff=n_eff)
 gamma_1, gamma_2 = calculate_gamma(freq_light*1e-3, q, contrast,
                                    res_area.params['a'].value,
                                    L=L, n_eff=n_eff)
 
 print("\n")
-print(f"gamma squared (solution 1): {gamma_1}")
-print(f"gamma squared (solution 2): {gamma_2}")
+print(f"field enhancement (solution 1): {np.sqrt(power_enhance_1)}")
+print(f"field enhancement (solution 2): {np.sqrt(power_enhance_2)}")
+print("\n")
+# print(f"gamma squared (solution 1): {gamma_1}")
+# print(f"gamma squared (solution 2): {gamma_2}")
+print(f"gamma (solution 1): {gamma_1}")
+print(f"gamma (solution 2): {gamma_2}")
 
 # calculate pair rate (for reference/double-checking)
 power = 0.35
@@ -276,6 +267,6 @@ n_photons_3, n_photons_4 = calculate_rates(freq_light*1e-3, q, contrast,
 print("\n")
 print(f"pair rate (solution 1): {n_photons_1}")
 print(f"pair rate (solution 2): {n_photons_2}")
-print(f"pair rate (solution 2): {n_photons_3}")
-print(f"pair rate (solution 2): {n_photons_4}")
+print(f"pair rate (solution 3): {n_photons_3}")
+print(f"pair rate (solution 4): {n_photons_4}")
 

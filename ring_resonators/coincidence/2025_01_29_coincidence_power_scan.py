@@ -11,19 +11,26 @@ from ring_resonators.cavity_fit.cavity_metrics import g_2_no_delta
 
 DATA_DIR = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators"
             "/New_mounted_device/300K_no_erbium/coincidence/01292025_pair_gen_power_scan")
+integration_time = 5 * 60  # units: s
 
 # plotting params
 mpl.rcParams.update({'font.sans-serif': 'Helvetica',
                      'font.size': 12})
 color = 'cornflowerblue'
 color_coincidence = 'coral'
+PLOT_ALL_COINCIDENCE = False  # plot all fitted coincidence curves
 
 
 # efficiencies
+# input laser light
 efficiency_laser_coupling = 0.5
 efficiency_spectrometer = 0.5
 efficiency_chip_coupling = 0.05413
 total_efficiency = efficiency_laser_coupling * efficiency_spectrometer * efficiency_chip_coupling
+# efficiencies for output light
+efficiency_52 = efficiency_chip_coupling * 0.7274 * 0.4532  # path taken by photons at 195.2 THz
+efficiency_48 = efficiency_chip_coupling * 0.4790 * 0.9260  # path taken by photons at 194.8 THz
+efficiency_pairs = efficiency_48 * efficiency_52
 
 
 # fitting function versus power
@@ -72,17 +79,18 @@ for filename in coincidence_files:
     all_res.append(res)
 
     # plot data for coincidences
-    plt.bar(time, coincidences, color=color_coincidence)
-    plt.plot(time, res.best_fit,
-             color='k', ls='--')
+    if PLOT_ALL_COINCIDENCE:
+        plt.bar(time, coincidences, color=color_coincidence)
+        plt.plot(time, res.best_fit,
+                 color='k', ls='--')
 
-    plt.title(f'Coincidences with {power} mW Pump Power')
-    plt.xlabel('Time (ns)')
-    plt.ylabel('Coincidences')
-    plt.xlim((-5, 5))
+        plt.title(f'Coincidences with {power} mW Pump Power')
+        plt.xlabel('Time (ns)')
+        plt.ylabel('Coincidences')
+        plt.xlim((-5, 5))
 
-    plt.tight_layout()
-    plt.show()
+        plt.tight_layout()
+        plt.show()
 
 
 # gather all fit data
@@ -115,10 +123,12 @@ for res in all_res:
     all_g_err.append(g_err)
 
     # extract integral (numerically)
-    only_coincidence = res.best_fit - res.params['amplitude'].value
+    only_coincidence = res.best_fit - res.params['amplitude'].value  # everything above bg
     times = res.userkws['x']
     time_diff = times[1] - times[0]  # assume uniform difference
-    integral = np.sum(only_coincidence[:-1]) * time_diff
+    integral = np.sum(only_coincidence[:-1])
+    integral /= integration_time  # convert to pairs/s
+    integral /= (efficiency_48 * efficiency_52)  # convert to on-chip pair rate
     all_integral.append(integral)
 
 
@@ -133,6 +143,13 @@ print(res.fit_report())
 res_area = model.fit(all_integral, x=powers,
                      a=0.16)
 print(res_area.fit_report())
+
+
+# calculate pair rate
+# pairs = res_area.params['a'].value / efficiency_out
+# pair_rate_1mW = pairs / int_time
+pair_rate_1mW = res_area.params['a'].value
+print('Pair rate at 1 mW (/s):', pair_rate_1mW)
 
 
 # plot of amplitudes versus pump power
@@ -167,25 +184,25 @@ plt.tight_layout()
 plt.show()
 
 
-# plot of widths versus pump power
+# plot of areas versus pump power
 fig, ax = plt.subplots()
 
 plt.errorbar(powers, all_integral,
              color='mediumpurple', ls='', marker='o', capsize=3,
-             label='Fitted Data')
+             label='Data')
 plt.plot(powers_for_fit, quadratic(powers_for_fit, **res_area.best_values),
          color='k', ls='--',
-         label='Fitted Trend')
+         label='Fit')
 
 # add text
-label = rf'$\gamma$ = {res_area.params['a'].value:.3f} $\pm$ {res_area.params['a'].stderr:.3f}'
-t = ax.text(0.95, 0.05, label,
-            horizontalalignment='right', verticalalignment='bottom')
-t.set_transform(ax.transAxes)
+# label = rf'$a$ = {res_area.params['a'].value:.3f} $\pm$ {res_area.params['a'].stderr:.3f}'
+# t = ax.text(0.95, 0.05, label,
+#             horizontalalignment='right', verticalalignment='bottom')
+# t.set_transform(ax.transAxes)
 
 plt.title('Coincidence Area versus Pump Power')
 plt.xlabel(r'Pump Power (mW)')
-plt.ylabel(r'Coincidence Area')
+plt.ylabel(r'Coincidence Area (pairs/s)')
 plt.legend(shadow=True)
 
 plt.tight_layout()
