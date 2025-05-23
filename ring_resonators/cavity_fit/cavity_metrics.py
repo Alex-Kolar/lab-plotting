@@ -27,6 +27,47 @@ def calculate_gamma(centers, qs, contrasts, a,
     return gamma_1, gamma_2
 
 
+def calculate_alpha_t(centers, qs, contrasts,
+                      L=(np.pi*220e-6), n_eff=2.18):
+    """Calculate field coefficients |alpha| and |t|.
+
+    Args:
+        centers (np.ndarray): frequency centers of resonances, in THz.
+        qs (np.ndarray): Q factors for resonances.
+        contrasts (np.ndarray): contrast of resonances.
+
+    Return:
+        Tuple(float, float, float, float): two possible values for alpha, and then 2 for t.
+            The first alpha and t value correspond to the undercoupled case.
+    """
+    # speed of light
+    c = 3e8
+
+    # calculate |kappa|^2 + 1 - |alpha|^2 (loss_sum) using Q
+    lambda_0 = c / (centers * 1e12)  # unit: m
+    loss_sum = (2 * np.pi * L * n_eff) / (lambda_0 * qs)
+
+    # calculate ratio of |kappa|^2 / loss_sum
+    R = 1 - contrasts  # power reflection
+    ratio_1 = (1 - np.sqrt(R)) / 2
+    ratio_2 = (1 + np.sqrt(R)) / 2
+
+    # calculate individual values
+    kappa_squared_1 = ratio_1 * loss_sum
+    t_squared_1 = 1 - kappa_squared_1
+    t_1 = np.sqrt(t_squared_1)
+    alpha_squared_1 = 1 - (loss_sum - kappa_squared_1)
+    alpha_1 = np.sqrt(alpha_squared_1)
+
+    kappa_squared_2 = ratio_2 * loss_sum
+    t_squared_2 = 1 - kappa_squared_2
+    t_2 = np.sqrt(t_squared_2)
+    alpha_squared_2 = 1 - (loss_sum - kappa_squared_2)
+    alpha_2 = np.sqrt(alpha_squared_2)
+
+    return alpha_1, alpha_2, t_1, t_2
+
+
 def calculate_enhancement(centers, qs, contrasts,
                           L=(np.pi*220e-6), n_eff=2.18):
     """Calculate power enhancement factor |F_0|^2.
@@ -36,23 +77,11 @@ def calculate_enhancement(centers, qs, contrasts,
         qs (np.ndarray): Q factors for resonances.
         contrasts (np.ndarray): contrast of resonances.
     """
-    # speed of light
-    c = 3e8
-
-    # calculate |kappa|^2 and |t|^2 using Q
-    lambda_0 = c / (centers * 1e12)  # unit: m
-    kappa_squared = (np.pi * L * n_eff) / (lambda_0 * qs)
-    t_squared = 1 - kappa_squared
-    t = np.sqrt(t_squared)
-
-    # calculate alpha (two possible values)
-    norm_trans = 1 - contrasts
-    alpha_1 = (t - np.sqrt(norm_trans)) / (1 - (t * np.sqrt(norm_trans)))
-    alpha_2 = (t + np.sqrt(norm_trans)) / (1 + (t * np.sqrt(norm_trans)))
+    alpha_1, alpha_2, t_1, t_2 = calculate_alpha_t(centers, qs, contrasts, L, n_eff)
 
     # calculate normalized power (field enhancement squared) on device
-    norm_power_1 = ((alpha_1 ** 2) * (1 - t_squared)) / ((1 - alpha_1 * t) ** 2)
-    norm_power_2 = ((alpha_2 ** 2) * (1 - t_squared)) / ((1 - alpha_2 * t) ** 2)
+    norm_power_1 = ((alpha_1 ** 2) * (1 - (t_1 ** 2))) / ((1 - alpha_1 * t_1) ** 2)
+    norm_power_2 = ((alpha_2 ** 2) * (1 - (t_2 ** 2))) / ((1 - alpha_2 * t_2) ** 2)
 
     return norm_power_1, norm_power_2
 
@@ -82,20 +111,7 @@ def calculate_rates(centers, qs, contrasts,
     # speed of light
     c = 3e8
 
-    # calculate |kappa|^2 and |t|^2 using Q
-    lambda_0 = c / (centers * 1e12)  # unit: m
-    kappa_squared = (np.pi * L * n_eff) / (lambda_0 * qs)
-    t_squared = 1 - kappa_squared
-    t = np.sqrt(t_squared)
-
-    # calculate alpha (two possible values)
-    norm_trans = 1 - contrasts
-    alpha_1 = (t - np.sqrt(norm_trans)) / (1 - (t * np.sqrt(norm_trans)))
-    alpha_2 = (t + np.sqrt(norm_trans)) / (1 + (t * np.sqrt(norm_trans)))
-
-    # calculate normalized power (field enhancement squared) on device
-    norm_power_1 = ((alpha_1 ** 2) * (1 - t_squared)) / ((1 - alpha_1 * t) ** 2)
-    norm_power_2 = ((alpha_2 ** 2) * (1 - t_squared)) / ((1 - alpha_2 * t) ** 2)
+    norm_power_1, norm_power_2 = calculate_enhancement(centers, qs, contrasts, L, n_eff)
 
     # calculate photons per second generated on sideband
     n_photons_1 = ((gamma * power) ** 2) * (norm_power_1 ** 3) * ((c * L) / (2 * n_eff))
