@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from lmfit.models import BreitWignerModel, ConstantModel
+from lmfit.models import BreitWignerModel, LinearModel
 from scipy.signal import find_peaks
 import pickle
 
@@ -29,7 +29,7 @@ color_factor = 'coral'
 colormap = mpl.colormaps['Purples']
 color_rate = 'black'
 
-PLOT_ALL_RES = True  # plot and save all intermediate results
+PLOT_ALL_RES = False  # plot and save all intermediate results
 
 
 # moving average function for peaks
@@ -94,7 +94,7 @@ for _, row in main_df.iterrows():
 
     # do fitting (and determine guesses for fit)
     max_trans = max(transmission)
-    model = ConstantModel()
+    model = LinearModel()
     model_kwargs = {}
     amplitudes = []
     for i, peak_idx in enumerate(peaks_to_keep):
@@ -105,7 +105,8 @@ for _, row in main_df.iterrows():
         model_kwargs[f'p{i}_center'] = freq[peak_idx]
         model_kwargs[f'p{i}_sigma'] = 100
         model_kwargs[f'p{i}_q'] = 0
-    model_kwargs['c'] = max_trans - sum(amplitudes)
+    model_kwargs['intercept'] = max_trans - sum(amplitudes)
+    model_kwargs['slope'] = 0
     res = model.fit(transmission, x=freq,
                     **model_kwargs)
 
@@ -135,7 +136,10 @@ for _, row in main_df.iterrows():
         width = res.params[f'p{i}_sigma'].value  # unit: MHz
         center = res.params[f'p{i}_center'].value  # unit: MHz
         amplitude = res.params[f'p{i}_amplitude'].value
-        constant = res.params[f'c'].value
+        # calculate value of bg at center
+        slope = res.params['slope'].value
+        intercept = res.params['intercept'].value
+        constant = slope * center + intercept
 
         # get q
         freq_light = (freq_start * 1e3) + center  # unit: MHz
@@ -168,7 +172,6 @@ for _, row in main_df.iterrows():
         center_by_device[device] = all_center_curr
         q_by_device[device] = all_q_curr
         contrast_by_device[device] = all_contrast_curr
-
 
     plt.title(f"Device {device} {wl:.3f} nm ({freq_start * 1e-3:.3f} THz) scan")
     plt.xlabel("Detuning (MHz)")
@@ -240,59 +243,3 @@ for device in center_by_device:
 
     plt.tight_layout()
     plt.show()
-
-
-# # make plot of on-chip power and pair rate versus frequency for each device
-# for device in center_by_device:
-#     centers = np.array(center_by_device[device])
-#     centers *= 1e-6  # convert to THz
-#     qs = np.array(q_by_device[device])
-#     contrasts = np.array(contrast_by_device[device])
-#
-#     norm_power_1, norm_power_2 = calculate_enhancement(centers, qs, contrasts)
-#     n_photons_1, n_photons_2 = calculate_rates(centers, qs, contrasts,
-#                                                power=1)
-#
-#     if PLOT_ALL_ENHANCEMENT:
-#         plt.stem(centers, norm_power_1,
-#                  linefmt=color_factor, markerfmt=color_factor, basefmt='k')
-#         plt.axhline(y=0, color='k')
-#         plt.title(f"Device {device} Field Enhancement (Solution 1)")
-#         plt.xlabel("Frequency (THz)")
-#         plt.ylabel(r"$|F_0|^2$")
-#
-#         plt.tight_layout()
-#         plt.show()
-#
-#         plt.stem(centers, norm_power_2,
-#                  linefmt=color_factor, markerfmt=color_factor, basefmt='k')
-#         plt.axhline(y=0, color='k')
-#         plt.title(f"Device {device} Field Enhancement (Solution 2)")
-#         plt.xlabel("Frequency (THz)")
-#         plt.ylabel(r"$|F_0|^2$")
-#
-#         plt.tight_layout()
-#         plt.show()
-#
-#     if PLOT_ALL_RATES:
-#         plt.stem(centers, n_photons_1,
-#                  linefmt=color_rate, markerfmt=color_rate, basefmt='k')
-#         plt.axhline(y=0, color='k')
-#         plt.title(f"Device {device} Estimated Pair Rate (Solution 1)")
-#         plt.xlabel("Frequency (THz)")
-#         plt.ylabel(r"Pairs per second")
-#         plt.yscale('log')
-#
-#         plt.tight_layout()
-#         plt.show()
-#
-#         plt.stem(centers, n_photons_2,
-#                  linefmt=color_rate, markerfmt=color_rate, basefmt='k')
-#         plt.axhline(y=0, color='k')
-#         plt.title(f"Device {device} Estimated Pair Rate (Solution 2)")
-#         plt.xlabel("Frequency (THz)")
-#         plt.ylabel(r"Pairs per second")
-#         plt.yscale('log')
-#
-#         plt.tight_layout()
-#         plt.show()
