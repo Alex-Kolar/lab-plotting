@@ -11,6 +11,7 @@ FILENAME = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Rin
             "/New_mounted_device/4K/06032025/Correlation_2025-06-03_17-47-42.txt")
 FITTING = True  # add a fit
 WAVELENGTH = 1537.502  # units: nm
+integration_time = 600  # units: s
 
 
 # plotting params
@@ -59,6 +60,12 @@ if FITTING:
     #                 kappa=kappa_guess,
     #                 g=g_guess)
     # print(res.fit_report())
+
+    # extract integral (numerically)
+    only_coincidence = res.best_fit - res.params['amplitude'].value  # everything above bg
+    integral = np.sum(only_coincidence[:-1])  # riemann sum
+    integral /= integration_time  # convert to pairs/s
+    print('Integral:', integral)
 
 
 # plotting
