@@ -9,6 +9,44 @@ def g_2_no_delta(x, x0, amplitude, kappa, g):
     return amplitude * g_2
 
 
+def g_2_exp_bg(x, x0, bg, amplitude, T_1, T_2):
+    """Another fitting function for cavity decay
+
+    Args:
+        x (np.ndarray): time-domain x-values
+        x0 (float): center of coincidence peak
+        bg (float): value of accidental coincidences
+        amplitude (float): amplitude of coincidence peak
+        T_1 (float): decay constant for right (positive) side of peak
+        T_2 (float): decay constant for left (negative) side of peak
+
+    Return:
+        np.ndarray: coincidence histogram
+    """
+    right_decay = np.heaviside(x-x0, 0.5) * np.exp(-(x-x0) / T_1)
+    left_decay = np.heaviside(x0-x, 0.5) * np.exp(-(x0-x) / T_2)
+    bg_arr = bg * np.ones_like(x)
+    return (amplitude * right_decay) + (amplitude * left_decay) + bg_arr
+
+
+def g_2_exp(x, x0, amplitude, T_1, T_2):
+    """Another fitting function for cavity decay
+
+    Args:
+        x (np.ndarray): time-domain x-values
+        x0 (float): center of coincidence peak
+        amplitude (float): amplitude of coincidence peak
+        T_1 (float): decay constant for left (negative) side of peak
+        T_2 (float): decay constant for right (positive) side of peak
+
+    Return:
+        np.ndarray: coincidence histogram
+    """
+    right_decay = np.heaviside(x-x0, 0.5) * np.exp(-(x-x0) / T_2)
+    left_decay = np.heaviside(x0-x, 0.5) * np.exp(-(x0-x) / T_1)
+    return (amplitude * right_decay) + (amplitude * left_decay)
+
+
 def calculate_gamma(centers, qs, contrasts, a,
                     L=(np.pi*220e-6), n_eff=2.18):
     """Calculate nonlinear coefficient gamma."""
