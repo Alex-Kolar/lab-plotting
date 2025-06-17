@@ -6,9 +6,11 @@ from scipy.signal import find_peaks
 
 
 OFFRES_DATA = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators"
-               "/Bulk_crystal/10mK/02212025/Echo/Off_res_10kHz_10min_38_9db.txt")
+               "/New_mounted_device/10mK/PL_holeburn_2025_04_03/storage"
+               "/storage off resonant 5 min int 70 ns width with 100kHz rep.txt")
 STORAGE_DATA = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators"
-                "/Bulk_crystal/10mK/02212025/Echo/YSO_echo3_10kHz_10min_194812_790GHz_38_9db_lightsoff.txt")
+                "/New_mounted_device/10mK/PL_holeburn_2025_04_03/storage"
+                "/Storage low power comb 5 min 70ns width 100kHz rep.txt")
 
 
 # plotting params
@@ -16,7 +18,7 @@ mpl.rcParams.update({'font.sans-serif': 'Helvetica',
                      'font.size': 12})
 color_offres = 'cornflowerblue'
 color = 'coral'
-PLOT_PEAKS = True
+PLOT_PEAKS = False
 
 
 # read data
@@ -40,7 +42,7 @@ plt.title('Off-Resonant Pulse Measurement')
 plt.xlabel(r'Time ($\mathrm{\mu}$s)')
 plt.ylabel('Counts')
 plt.yscale('log')
-plt.xlim(0, 2.2)
+plt.xlim(3, 3.3)
 
 plt.tight_layout()
 plt.show()
@@ -53,7 +55,7 @@ plt.title('Echo Measurement')
 plt.xlabel(r'Time ($\mathrm{\mu}$s)')
 plt.ylabel('Counts')
 plt.yscale('log')
-plt.xlim(0, 2.2)
+plt.xlim(3, 3.3)
 
 plt.tight_layout()
 plt.show()
@@ -74,7 +76,7 @@ if PLOT_PEAKS:
     plt.xlabel(r'Time ($\mathrm{\mu}$s)')
     plt.ylabel('Counts')
     plt.yscale('log')
-    plt.xlim(0, 2.2)
+    plt.xlim(3, 3.3)
 
     plt.tight_layout()
     plt.show()
@@ -92,7 +94,7 @@ if PLOT_PEAKS:
     plt.xlabel(r'Time ($\mathrm{\mu}$s)')
     plt.ylabel('Counts')
     plt.yscale('log')
-    plt.xlim(0, 2.2)
+    plt.xlim(3, 3.3)
 
     plt.tight_layout()
     plt.show()
@@ -115,7 +117,7 @@ plt.xlabel(r'Time ($\mathrm{\mu}$s)')
 plt.ylabel('Counts')
 plt.legend(shadow=True)
 plt.yscale('log')
-plt.xlim(0, 1.2)
+plt.xlim(3, 3.3)
 
 plt.tight_layout()
 plt.show()
