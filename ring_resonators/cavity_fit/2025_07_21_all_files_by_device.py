@@ -1,4 +1,3 @@
-import glob
 import os
 import pandas as pd
 import numpy as np
@@ -7,6 +6,8 @@ import matplotlib.pyplot as plt
 from lmfit.models import BreitWignerModel, LinearModel
 from scipy.signal import find_peaks
 import pickle
+
+from cavity_metrics import calculate_enhancement, calculate_rates
 
 
 DATA_DIR = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators"
@@ -227,20 +228,18 @@ plt.tight_layout()
 plt.show()
 
 
-# make plot of q versus freq for each device
-# coloring is based on coupling
+# make a few relevant plots of all scan data
 for device in center_by_device:
     centers = np.array(center_by_device[device])
     centers *= 1e-6  # convert to THz
     qs = np.array(q_by_device[device])
     contrasts = np.array(contrast_by_device[device])
 
-    # colored stem plot
-    # collect lines
+    # make plot of q versus freq for each device
+    # colorbar for contrast of each device
     for center, q, contrast in zip(centers, qs, contrasts):
         color_samp = colormap(contrast)
         plt.plot([center, center], [0, q], color=color_samp)
-    # do scatter part
     plt.scatter(centers, qs, c=contrasts,
                 cmap=colormap, vmin=0, vmax=1, zorder=3)
     plt.axhline(y=0, color='k')
@@ -248,6 +247,52 @@ for device in center_by_device:
     plt.xlabel("Frequency (THz)")
     plt.ylabel("Q Factor")
     plt.colorbar(label="Contrast")
+
+    plt.tight_layout()
+    plt.show()
+
+
+    norm_power_1, norm_power_2 = calculate_enhancement(centers, qs, contrasts)
+    n_photons_1, n_photons_2 = calculate_rates(centers, qs, contrasts, power=1)
+
+    plt.stem(centers, np.sqrt(norm_power_1),
+             linefmt=color_factor, markerfmt=color_factor, basefmt='k')
+    plt.axhline(y=0, color='k')
+    plt.title(f"Device {device} Field Enhancement (Solution 1)")
+    plt.xlabel("Frequency (THz)")
+    plt.ylabel(r"$|F_0|^2$")
+
+    plt.tight_layout()
+    plt.show()
+
+    plt.stem(centers, np.sqrt(norm_power_2),
+             linefmt=color_factor, markerfmt=color_factor, basefmt='k')
+    plt.axhline(y=0, color='k')
+    plt.title(f"Device {device} Field Enhancement (Solution 2)")
+    plt.xlabel("Frequency (THz)")
+    plt.ylabel(r"$|F_0|^2$")
+
+    plt.tight_layout()
+    plt.show()
+
+    plt.stem(centers, n_photons_1,
+             linefmt=color_rate, markerfmt=color_rate, basefmt='k')
+    plt.axhline(y=0, color='k')
+    plt.title(f"Device {device} Estimated Pair Rate (Solution 1)")
+    plt.xlabel("Frequency (THz)")
+    plt.ylabel(r"Pairs per second")
+    plt.yscale('log')
+
+    plt.tight_layout()
+    plt.show()
+
+    plt.stem(centers, n_photons_2,
+             linefmt=color_rate, markerfmt=color_rate, basefmt='k')
+    plt.axhline(y=0, color='k')
+    plt.title(f"Device {device} Estimated Pair Rate (Solution 2)")
+    plt.xlabel("Frequency (THz)")
+    plt.ylabel(r"Pairs per second")
+    plt.yscale('log')
 
     plt.tight_layout()
     plt.show()
