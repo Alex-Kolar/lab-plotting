@@ -125,7 +125,7 @@ def calculate_enhancement(centers, qs, contrasts,
 
 
 def calculate_rates(centers, qs, contrasts,
-                    L=(np.pi*220e-6), n_eff=2.18, gamma=2.55e-6, power=1):
+                    L=(np.pi*220e-6), n_eff=2.18, gamma=4.46e-4, power=1):
     """Calculate the expected pair rate of generated photons for SiC ring resonators.
 
     First calculates the field enhancement factor F_0, based on measured Q and contrast.
