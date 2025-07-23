@@ -1,4 +1,5 @@
 import numpy as np
+from warnings import warn
 
 
 # fitting function for coincidences
@@ -87,6 +88,10 @@ def calculate_alpha_t(centers, qs, contrasts,
 
     # calculate ratio of |kappa|^2 / loss_sum
     R = 1 - contrasts  # power reflection
+    for i, r in enumerate(R):
+        if r < 0:
+            warn(f'Setting reflection value {r} to 0.')
+            R[i] = 0
     ratio_1 = (1 - np.sqrt(R)) / 2
     ratio_2 = (1 + np.sqrt(R)) / 2
 
