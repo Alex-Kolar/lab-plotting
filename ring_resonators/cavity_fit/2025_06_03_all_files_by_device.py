@@ -14,7 +14,7 @@ DATA_DIR = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Rin
 CSV_PATH = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators"
             "/New_mounted_device/10mK/06032025/resonances_06_03_2025.csv")
 OUTPUT_DIR = ("/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs/ring_resonators"
-              "/new_mounted/10mK_cavity/10mK_06032025")
+              "/mounted_mk_2/10mK_cavity/10mK_06032025")
 
 # fitting params
 SMOOTHING = 21

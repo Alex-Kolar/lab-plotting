@@ -19,7 +19,7 @@ integration_time = 600  # units: s
 # plotting params
 mpl.rcParams.update({'font.sans-serif': 'Helvetica',
                      'font.size': 12})
-xlim_range = 20  # size of x lims
+xlim_range = 300  # size of x lims
 fit_range = 500  # size for fitting
 color = 'coral'
 color_pulse = 'cornflowerblue'

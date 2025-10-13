@@ -7,10 +7,18 @@ from lmfit.models import BreitWignerModel, ConstantModel
 
 DATA = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators"
         "/New_mounted_device/10mK/06032025/SDS00005.csv")
+# pump resonance (file 7)
+# TITLE = 'Pump Resonance'
 # START_FREQ = 194986.727  # unit: GHz
 # END_FREQ = 194995.339  # unit: GHz
+# memory resonance (file 5)
+TITLE = 'Signal Resonance'
 START_FREQ = 194830.019
 END_FREQ = 194838.606
+# idler resonance (file 9)
+# TITLE = 'Idler Resonance'
+# START_FREQ = 195141.914
+# END_FREQ = 195150.547
 
 # plotting params
 mpl.rcParams.update({'font.sans-serif': 'Helvetica',
@@ -61,7 +69,7 @@ plt.plot(freq, out.best_fit, '--k', label="Fit")
 # plt.plot(freq, out.init_fit, '--r', label="Initial")
 plt.xlim(xlim)
 plt.legend(shadow=True)
-plt.title("Pump Resonance")
+plt.title(TITLE)
 plt.xlabel("Detuning (GHz)")
 plt.ylabel("Transmission (A.U.)")
 
