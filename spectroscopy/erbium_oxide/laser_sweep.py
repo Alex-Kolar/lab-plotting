@@ -6,18 +6,21 @@ from scipy.signal import find_peaks
 import pickle
 
 
-DATA_DIR = '/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Er2O3'
+DATA_DIR = ('/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab members/ZhongLab_Matt'
+            '/Er2O3/Bulk/mK/ZeroFieldSpectra/Fields/C2')
 OUTPUT_NAME = 'processed_data.bin'
 
 
-def first_and_last_idx(data):
-    peak_idxs, _ = find_peaks(data, prominence=1)
-    trough_idxs, _ = find_peaks(-data, prominence=1)
+def first_and_last_idx(data, **kwargs):
+    peak_idxs, _ = find_peaks(data, **kwargs)
+    trough_idxs, _ = find_peaks(-data, **kwargs)
     idx_start = trough_idxs[0]
     if peak_idxs[0] < idx_start:
         idx_end = peak_idxs[1]
     else:
         idx_end = peak_idxs[0]
+
+    assert idx_start < idx_end
 
     return idx_start, idx_end
 
@@ -39,6 +42,9 @@ for i, (freq_filename, trans_filename) in enumerate(zip(freq_filenames, trans_fi
     trans_base = os.path.basename(trans_filename)
     assert freq_base[:13] == trans_base[:13]
 
+    print('\tFrequency file:', freq_base)
+    print('\tTransmission file:', trans_base)
+
     freq_parts = freq_base.split('_')
     field = float(freq_parts[0])
     target_freq = float(freq_parts[1])
@@ -50,8 +56,16 @@ for i, (freq_filename, trans_filename) in enumerate(zip(freq_filenames, trans_fi
     trans_df = pd.read_csv(trans_filename, skiprows=8, names=['Time', 'Ramp', 'Photodiode'])
 
     # get start and end points of ramp and frequency
-    ramp_start, ramp_end = first_and_last_idx(trans_df['Ramp'])
-    freq_start, freq_end = first_and_last_idx(freq_array)
+    try:
+        ramp_start, ramp_end = first_and_last_idx(trans_df['Ramp'], prominence=1, distance=10000)
+    except AssertionError:
+        print('\tError in computing start and end index for the ramp; skipping')
+        continue
+    try:
+        freq_start, freq_end = first_and_last_idx(freq_array, prominence=1, distance=500)
+    except AssertionError:
+        print('\tError in computing start and end index for the frequencies; skipping')
+        continue
 
     # get photodiode voltage and interpolate frequency
     voltage = trans_df['Photodiode'][ramp_start:ramp_end]
