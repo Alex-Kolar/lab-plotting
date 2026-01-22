@@ -6,7 +6,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from lmfit import Model
 
-from ring_resonators.cavity_fit.cavity_metrics import g_2_exp_bg
+from ring_resonators.cavity_fit.cavity_metrics import g_2_exp_bg, g_2_no_delta
 
 
 DATA_DIR = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators"
@@ -20,7 +20,7 @@ current_to_power = {100: 22.3,  # power (in uW) at BS before sample
 
 # plotting params
 mpl.rcParams.update({'font.sans-serif': 'Helvetica',
-                     'font.size': 12})
+                     'font.size': 10})
 color = 'cornflowerblue'
 color_area = 'mediumpurple'
 color_coincidence = 'coral'
@@ -62,7 +62,8 @@ int_times = []  # store all integration times
 all_res = []  # store all fit result objects
 
 # set up model for fitting
-model = Model(g_2_exp_bg)
+# model = Model(g_2_exp_bg)
+model = Model(g_2_no_delta)
 
 for filename in coincidence_files:
     file_str = os.path.splitext(filename)[0]
@@ -85,28 +86,64 @@ for filename in coincidence_files:
     coincidences = df['Counts']
 
     # fitting
+    print(f'Fitting {current} mA pump')
+    # x0_guess = time[np.argmax(coincidences)]
+    # amplitude_guess = np.max(coincidences)
+    # bg_guess = np.mean(coincidences[:100])
+    #
+    # T_1_guess = 3
+    # T_2_guess = 3
+    # res = model.fit(coincidences, x=time,
+    #                 x0=x0_guess,
+    #                 bg=bg_guess,
+    #                 amplitude=amplitude_guess,
+    #                 T_1=T_1_guess,
+    #                 T_2=T_2_guess)
+    # all_res.append(res)
+    #
+    # T_1 = res.params['T_1'].value
+    # T_1_err = res.params['T_1'].stderr
+    # T_2 = res.params['T_2'].value
+    # T_2_err = res.params['T_2'].stderr
+    #
+    # kappa_1 = 1/(T_1 * 2 * np.pi) * 1e3  # convert to MHz
+    # kappa_1_err = (T_1_err / T_1) * kappa_1
+    # kappa_2 = 1/(T_2 * 2 * np.pi) * 1e3  # convert to MHz
+    # kappa_2_err = (T_2_err / T_2) * kappa_2
+    #
+    # print(f'\tT_1: {T_1:.2f} +/- {T_1_err:.2f} ns ({kappa_1:.2f} +/- {kappa_1_err:.2f} MHz)')
+    # print(f'\tT_2: {T_2:.2f} +/- {T_2_err:.2f} ns ({kappa_2:.2f} +/- {kappa_2_err:.2f} MHz)')
+
+    # fitting
     x0_guess = time[np.argmax(coincidences)]
     amplitude_guess = np.max(coincidences)
-    bg_guess = np.mean(coincidences[:100])
-    T_1_guess = 3
-    T_2_guess = 3
+    kappa_guess = 1
+    g_guess = 0.125
     res = model.fit(coincidences, x=time,
                     x0=x0_guess,
-                    bg=bg_guess,
                     amplitude=amplitude_guess,
-                    T_1=T_1_guess,
-                    T_2=T_2_guess)
+                    kappa=kappa_guess,
+                    g=g_guess)
     all_res.append(res)
+
+    kappa = res.params['kappa'].value
+    print('correlation time:', np.pi/kappa)
 
     # plot data for coincidences
     if PLOT_ALL_COINCIDENCE:
-        plt.bar(time, coincidences, color=color_coincidence)
-        plt.plot(time, res.best_fit,
-                 color='k', ls='--')
+        fig, ax = plt.subplots(figsize=(4, 2), dpi=400)
 
-        plt.title(rf'Coincidences with {power_on_chip:.0f} $\mathrm{{\mu}}$W Pump Power On-Chip')
+        plt.bar(time, coincidences, color=color_coincidence,
+                label='Data')
+        plt.plot(time, res.best_fit,
+                 color='k', ls='--',
+                 label='Fit')
+
+        # plt.title(rf'Coincidences with {power_on_chip:.0f} $\mathrm{{\mu}}$W Pump Power On-Chip')
+        plt.title('Two-Photon Coincidence')
         plt.xlabel('Time (ns)')
         plt.ylabel('Coincidences')
+        plt.legend()
 
         x_start = res.params['x0'].value - (x_range / 2)
         x_end = res.params['x0'].value + (x_range / 2)
@@ -122,7 +159,7 @@ all_amps_err = [res.params['amplitude'].stderr for res in all_res]
 all_integral = []
 for res in all_res:
     # extract integral (numerically)
-    only_coincidence = res.best_fit - res.params['bg'].value  # everything above bg
+    only_coincidence = res.best_fit - res.params['amplitude'].value  # everything above bg
     integral = np.sum(only_coincidence)
     integral /= integration_time  # convert to pairs/s
     integral /= efficiency_pairs  # get on chip pair rate
@@ -166,7 +203,7 @@ plt.show()
 
 
 # plot of areas versus pump power
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(4, 2), dpi=400)
 
 plt.errorbar(powers, all_integral,
              color='mediumpurple', ls='', marker='o', capsize=3,
@@ -175,17 +212,17 @@ plt.plot(powers_for_fit, quadratic(powers_for_fit, **res_area.best_values),
          color='k', ls='--',
          label='Fit')
 
-# add text
-label = (rf'$a$ = {res_area.params['a'].value * 1e6:.0f} $\pm$ {res_area.params['a'].stderr * 1e6:.0f} '
-           '$\mathrm{{s}}^{{-1}}\mathrm{{mW}}^{{-2}}$')
-t = ax.text(0.95, 0.05, label,
-            horizontalalignment='right', verticalalignment='bottom')
-t.set_transform(ax.transAxes)
+# # add text
+# label = (rf'$a$ = {res_area.params['a'].value * 1e6:.0f} $\pm$ {res_area.params['a'].stderr * 1e6:.0f} '
+#            '$\mathrm{{s}}^{{-1}}\mathrm{{mW}}^{{-2}}$')
+# t = ax.text(0.95, 0.05, label,
+#             horizontalalignment='right', verticalalignment='bottom')
+# t.set_transform(ax.transAxes)
 
 plt.title('Coincidence Area versus Pump Power')
 plt.xlabel(r'Pump Power On-Chip ($\mathrm{\mu}$W)')
-plt.ylabel(r'Coincidence Area On-Chip (pairs/s)')
-plt.legend(shadow=True)
+plt.ylabel(r'Coincidence Area')
+plt.legend()
 
 plt.tight_layout()
 plt.show()
