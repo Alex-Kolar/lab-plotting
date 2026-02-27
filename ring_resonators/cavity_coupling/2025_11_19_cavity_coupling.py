@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 
 DATA_PATH = ('/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators'
-             '/Mounted_device_mk_5/10mK/cavity_coupling/11192025/CAVANDER.csv')
+             '/Mounted_device_mk_5/10mK/2025_11_19/cavity_coupling/CAVANDER.csv')
 FREQ_START = 194825.400  # unit: GHz
 FREQ_END = 194834.019  # unit: GHz
 

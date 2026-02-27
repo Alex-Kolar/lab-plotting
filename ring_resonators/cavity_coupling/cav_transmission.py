@@ -28,23 +28,30 @@ def T_no_gamma(w, w_cav, w_ions, kappa, delta, omega, a, b, phi):
 
 
 def R_no_gamma(w, w_cav, w_ions, kappa, delta, omega, a, b, phi):
-    return a * (b**2 + 1) - T_no_gamma(w, w_cav, w_ions, kappa, delta, omega, a, b, phi)
+    return a * np.abs(b*np.exp(1j*phi) + 1)**2 - T_no_gamma(w, w_cav, w_ions, kappa, delta, omega, a, b, phi)
+
+
+def R_mod(w, w_cav, w_ions, kappa, kappa_in, coupling, inhomog, a):
+    ion_term = (coupling ** 2) / (w - w_ions + 1j*inhomog/2)
+    t = 1 - (1j*kappa_in)/(w - w_cav + 1j*kappa/2 - ion_term)
+    return a * (np.abs(t) ** 2)
 
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
     # frequency parameters
-    w = np.linspace(-5, 5, 1000)  # unit: GHz
+    w = np.linspace(-2, 2, 1000)  # unit: GHz
     w_cav = 0
-    w_ion = 0.5
+    w_ion = 0
 
     # cavity parameters
-    kappa = 0.5
+    kappa = 0.405  # unit: GHz
+    kappa_in = kappa / 2
 
     # coupling parameters
-    omega = 0.2  # unit: GHz
-    delta = 0.3  # unit: GHz
+    coupling = 0.07  # unit: GHz
+    inhomogeneous = 0.1  # unit: GHz
     # gamma = 0
 
     # fitting parameters
@@ -53,10 +60,12 @@ if __name__ == '__main__':
     phi = 0
 
     # plotting
-    transmission = T_no_gamma(w, w_cav, w_ion, kappa, delta, omega, a, b, phi)
-    reflection = a - transmission
-    transmission_no_ions = T_no_gamma(w, w_cav, w_ion, kappa, delta, 0, a, b, phi)
-    reflection_no_ions = a - transmission_no_ions
+    # transmission = T_no_gamma(w, w_cav, w_ion, kappa, delta, omega, a, b, phi)
+    # reflection = R_no_gamma(w, w_cav, w_ion, kappa, delta, omega, a, b, phi)
+    # transmission_no_ions = T_no_gamma(w, w_cav, w_ion, kappa, delta, 0, a, b, phi)
+    # reflection_no_ions = R_no_gamma(w, w_cav, w_ion, kappa, delta, 0, a, b, phi)
+    reflection = R_mod(w, w_cav, w_ion, kappa, kappa_in, coupling, inhomogeneous, a)
+    reflection_no_ions = R_mod(w, w_cav, w_ion, kappa, kappa_in, 0, inhomogeneous, a)
 
     plt.plot(w, reflection_no_ions,
              label='Cavity Reflection')

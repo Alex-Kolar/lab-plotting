@@ -24,20 +24,20 @@ color_memory = 'coral'
 
 # fitting guesses
 # frequency parameters
-w_cav_guess = 1.7
+w_cav_guess = 1.8
 w_ion_guess = 2.0
 
 # cavity parameters
-kappa_guess = 0.4
+kappa_guess = 0.5
 
 # coupling parameters
-omega_guess = 0.1  # unit: GHz
-delta_guess = 0.1  # unit: GHz
+omega_guess = 0.11  # unit: GHz
+delta_guess = 0.12  # unit: GHz
 
 # fitting parameters
-a_guess = 7
-b_guess = 0
-phi_guess = 0
+a_guess = 4.8
+b_guess = 0.3
+phi_guess = 0.2
 
 
 # read background data
@@ -61,16 +61,16 @@ freq = np.linspace(0, END_FREQ-START_FREQ, id_max-id_min)  # unit: GHz
 
 # fitting of data
 p0 = (w_cav_guess, w_ion_guess, kappa_guess, delta_guess, omega_guess, a_guess, b_guess, phi_guess)
-popt, pcov = curve_fit(R_no_gamma, freq, transmission_memory, p0=p0)
-print(popt)
+# popt, pcov = curve_fit(R_no_gamma, freq, transmission_memory, p0=p0, maxfev=10000)
+# print(popt)
 
 r_guess = R_no_gamma(freq, w_cav_guess, w_ion_guess, kappa_guess, delta_guess, omega_guess, a_guess, b_guess, phi_guess)
 plt.plot(freq, transmission_memory,
          label='Data')
-plt.plot(freq, R_no_gamma(freq, *popt),
-         ls='--', color='k', label='Fit')
-# plt.plot(freq, r_guess,
-#          ls='--', color='r', label='Initial Guess')
+# plt.plot(freq, R_no_gamma(freq, *popt),
+#          ls='--', color='k', label='Fit')
+plt.plot(freq, r_guess,
+         ls='--', color='r', label='Initial Guess')
 plt.xlabel(f'Detuning (GHz) from {START_FREQ} GHz')
 plt.ylabel('Transmission (A.U.)')
 plt.legend()
@@ -95,6 +95,6 @@ units = ['GHz',
          '',
          '']
 
-print('Fitted Parameters:')
-for value, error, parameter_name, unit in zip(popt, np.diag(pcov), parameters, units):
-    print(f'\t{parameter_name}: {value:.3f} +/- {error:.3f} {unit}')
+# print('Fitted Parameters:')
+# for value, error, parameter_name, unit in zip(popt, np.diag(pcov), parameters, units):
+#     print(f'\t{parameter_name}: {value:.3f} +/- {error:.3f} {unit}')
