@@ -8,10 +8,10 @@ import pylab as pl
 from lmfit.models import ExponentialModel, ConstantModel
 
 
-DATA_ON = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators"
-           "/mounted_device_mk_4/10mK/2025_08_18/pl/pl_experiment.npz")
-DATA_OFF = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators"
-           "/mounted_device_mk_4/10mK/2025_08_18/pl/pl_experiment_1.npz")
+DATA_ON = ('/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators'
+           '/Mounted_device_mk_3/4K/2025_07_24/pl/pl_experiment_onres1.npz')
+DATA_OFF = ('/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators'
+            '/Mounted_device_mk_3/4K/2025_07_24/pl/pl_experiment_offres1.npz')
 CUTOFF_IDX = 5
 
 # plotting params
@@ -71,6 +71,7 @@ plt.plot(time, data_on['counts'][CUTOFF_IDX:],
          color=color_on, label='On-Resonant Excitation')
 plt.plot(time, data_off['counts'][CUTOFF_IDX:],
          color=color_off, label='Off-Resonant Excitation')
+plt.title('PL Lifetime Comparison')
 plt.xlabel('Time (ms)')
 plt.ylabel('Counts')
 plt.legend()

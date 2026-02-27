@@ -8,9 +8,9 @@ import pickle
 
 
 DATA_DIR = ("/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators"
-            "/New_mounted_device/10mK/PL_scan_2025_03_25")
+            "/New_mounted_device/10mK/PL_scan_2025_04_02")
 OUTPUT_DIR = ("/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs/ring_resonators"
-              "/new_mounted/10mK_pl/all_fitted_decay/03252025")
+              "/new_mounted/10mK_pl/all_fitted_decay/04022025")
 CUTOFF_IDX = 5
 
 # plotting params
@@ -20,13 +20,7 @@ color = 'cornflowerblue'
 bbox = dict(boxstyle='square', facecolor='white', alpha=1, edgecolor='black')
 
 
-# make output dir
-if not os.path.exists(OUTPUT_DIR):
-    print(f'Creating directory {OUTPUT_DIR}')
-    os.makedirs(OUTPUT_DIR)
-
-# get data
-pl_files = glob.glob(DATA_DIR + "/*181805*.npz")
+pl_files = glob.glob(DATA_DIR + "/*.npz")
 
 model = ExponentialModel() + ConstantModel()
 freqs = []
@@ -34,17 +28,21 @@ all_res = []
 laser_pulses = []
 areas = []
 for file in pl_files:
+    file_parts = file.split('_')
+    freq_str = file_parts[-2] + '_' + file_parts[-1][:-4]
+    frequency = file_parts[-2] + '.' + file_parts[-1][:-4]  # before and after decimal
+    freq = float(frequency)
+    freqs.append(freq)
+
+
     data = np.load(file)
-    freq = data['freq']
     bins = data['bins'][CUTOFF_IDX:]
     hist = data['hist'][CUTOFF_IDX:]
     laser_pulses.append(data['hist'][0])
     areas.append(np.sum(hist))
-    freqs.append(freq)
 
     res = model.fit(hist, x=bins,
-                    decay=0.01, amplitude=10,
-                    c=5)
+                    amplitude=100, decay=0.01, c=250)
     all_res.append(res)
 
     t1 = res.params['decay'].value
@@ -61,12 +59,11 @@ for file in pl_files:
              transform=ax.transAxes)
     plt.xlabel('Time (s)')
     plt.ylabel('Counts')
-    plt.ylim((0, 100))
+    # plt.ylim((0, 100))
     # plt.yscale('log')
 
     plt.tight_layout()
-    freq_str = f'{freq:.3f}'.replace('.', '_')
-    # plt.savefig(OUTPUT_DIR + '/' + freq_str + '.png')
+    plt.savefig(OUTPUT_DIR + '/' + freq_str + '.png')
     plt.clf()
 
 freqs = np.array(freqs)
@@ -114,7 +111,7 @@ plt.errorbar(freqs, amplitudes, yerr=amplitude_err,
 plt.xlabel(f'Frequency + {freq_min:.3f} (GHz)')
 plt.ylabel('Fitted PL Amplitude (A.U.)')
 plt.grid(True)
-plt.ylim((0, 120))
+plt.ylim((0, 200))
 
 plt.tight_layout()
 plt.show()
@@ -133,14 +130,8 @@ axs[0].set_ylabel('Fitted Background (A.U.)')
 axs[1].set_ylabel('Laser Counts')
 axs[2].set_ylabel('PL Lifetime (ms)')
 axs[-1].set_xlabel(f'Frequency + {freq_min:.3f} (GHz)')
-# axs[0].set_ylim((0, 5))
-axs[2].set_ylim((0, 15))
+axs[0].set_ylim((0, 400))
+axs[2].set_ylim((0, 30))
 
 plt.tight_layout()
 plt.show()
-
-
-# get data on max position
-max_idx = np.argmax(amplitudes)
-max_freq = freqs[max_idx]
-print(f"Frequency (no AOM): {max_freq + freq_min:.3f}")
