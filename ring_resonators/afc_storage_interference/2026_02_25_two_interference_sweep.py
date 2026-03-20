@@ -15,12 +15,11 @@ DATA_DIR_PHASE = ('/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab da
 one_pulse_offres = 'one_pulse_offres.txt'
 one_pulse_storage = 'one_pulse_3_00pi.txt'
 two_pulse_offres = 'two_pulse_offres.txt'
-interference_window = (1.97-0.05, 1.97+0.05)
+interference_window = (1.99-0.05, 1.99+0.05)
 
 # plotting params
 mpl.rcParams.update({'font.sans-serif': 'Helvetica',
                      'font.size': 12})
-PLOT_PEAKS = False
 xlim = (1.97-0.2, 1.97+0.2)
 OUTPUT_DIR = ('/Users/alexkolar/Desktop/Lab/lab-plotting/output_figs/ring_resonators'
               '/mounted_mk_5/10mK_echo/interference_sweep/no_phase_offset')
@@ -52,7 +51,9 @@ for file in storage_files:
     time = df['time(ps)']
     time /= 1e6  # convert to us
     counts = df['counts']
-    plt.plot(time, counts, color=color_phase)
+    plt.plot(time, counts, color=color_no_phase)
+    plt.axvspan(interference_window[0], interference_window[1],
+                alpha=0.2, color='gray', label='Interference Count Window')
     plt.title(rf'Comb Separation $\Delta\phi = {pi_fraction}\pi$')
     plt.ylim(0, 800)
     plt.xlim(xlim)
@@ -87,6 +88,8 @@ for file in storage_files_phase:
     time /= 1e6  # convert to us
     counts = df['counts']
     plt.plot(time, counts, color=color_phase)
+    plt.axvspan(interference_window[0], interference_window[1],
+                alpha=0.2, color='gray', label='Interference Count Window')
     plt.title(rf'Comb Separation $\Delta\phi = {pi_fraction}\pi$')
     plt.ylim(0, 800)
     plt.xlim(xlim)
@@ -120,6 +123,7 @@ constant_err = res.params['c'].stderr
 visibility = amplitude/constant
 visibility_err = visibility * np.sqrt((amplitude_err/amplitude)**2 + (constant_err/constant)**2)
 print(f'Visibility: {visibility*100:.2f} +/- {visibility_err*100:.2f}%')
+print(f'Fidelity: {(visibility+1)/2:.4f} +/- {visibility_err/2:.4f}')
 maximum = (np.pi/2 - res.params['shift']) / res.params['frequency']
 print(f'Calculated Maximum Point: {maximum}')
 
@@ -130,13 +134,14 @@ amplitude = res_phase.params['amplitude'].value
 amplitude_err = res_phase.params['amplitude'].stderr
 constant = res_phase.params['c'].value
 constant_err = res_phase.params['c'].stderr
-visibility = amplitude/constant
-visibility_err = visibility * np.sqrt((amplitude_err/amplitude)**2 + (constant_err/constant)**2)
-print(f'Visibility: {visibility*100:.2f} +/- {visibility_err*100:.2f}%')
+visibility_phase = amplitude/constant
+visibility_phase_err = visibility * np.sqrt((amplitude_err/amplitude)**2 + (constant_err/constant)**2)
+print(f'Visibility: {visibility_phase*100:.2f} +/- {visibility_phase_err*100:.2f}%')
+print(f'Fidelity: {(visibility_phase+1)/2:.4f} +/- {visibility_phase_err/2:.4f}')
 maximum = (np.pi/2 - res_phase.params['shift']) / res_phase.params['frequency']
 print(f'Calculated Maximum Point: {maximum}')
 
-# final plotting
+# final plotting of points and fitted fringe
 x_points_for_eval = np.linspace(min(all_phases), max(all_phases), 1000)
 plt.plot(all_phases, all_interference_counts,
          color=color_no_phase, ls='', marker='o',
