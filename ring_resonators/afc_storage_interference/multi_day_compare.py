@@ -11,14 +11,14 @@ DIRS_CONSTRUCTIVE = [('/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/La
                       '/Mounted_device_mk_5/10mK/2026_03_23/afc_longterm'),
                      ('/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators'
                       '/Mounted_device_mk_5/10mK/2026_03_27/afc_longterm')]
-# FILES_TO_INCLUDE_CONSTRUCTIVE = [12, 6, 2]
-FILES_TO_INCLUDE_CONSTRUCTIVE = [5, 5, 0]
+FILES_TO_INCLUDE_CONSTRUCTIVE = [12, 6, 2]
+# FILES_TO_INCLUDE_CONSTRUCTIVE = [5, 5, 0]
 DIRS_DESTRUCTIVE = [('/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators'
                      '/Mounted_device_mk_5/10mK/2026_03_21/afc_longterm'),
                     ('/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators'
                      '/Mounted_device_mk_5/10mK/2026_03_25/afc_longterm')]
-# FILES_TO_INCLUDE_DESTRUCTIVE = [12, 15]
-FILES_TO_INCLUDE_DESTRUCTIVE = [5, 5]
+FILES_TO_INCLUDE_DESTRUCTIVE = [12, 15]
+# FILES_TO_INCLUDE_DESTRUCTIVE = [5, 5]
 center = 0.22599999999999998
 
 # plotting params
