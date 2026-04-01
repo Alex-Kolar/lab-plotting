@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 DIRS_CONSTRUCTIVE = [('/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators'
                       '/Mounted_device_mk_5/10mK/2026_03_23/afc_longterm'),
                      ('/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators'
-                      '/Mounted_device_mk_5/10mK/2026_03_23/afc_longterm'),
+                      '/Mounted_device_mk_5/10mK/2026_03_26/afc_longterm'),
                      ('/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators'
                       '/Mounted_device_mk_5/10mK/2026_03_27/afc_longterm')]
 FILES_TO_INCLUDE_CONSTRUCTIVE = [12, 6, 2]
