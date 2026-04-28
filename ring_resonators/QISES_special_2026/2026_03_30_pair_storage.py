@@ -40,9 +40,11 @@ time -= center
 
 
 # plot overlaid
+fig, ax = plt.subplots(figsize=(6, 4), dpi=400)
 plt.plot(time, coincidence_offres, color=color_offres)
 plt.plot(time, coincidence, color=color)
 plt.xlim(-xlim_range/2, xlim_range/2)
+plt.ylim(ylim)
 plt.xlabel(r"Timing Offset ($\mathrm{\mu}$s)")
 plt.ylabel("Coincidence Counts")
 plt.title("Two-Photon Coincidence with AFC Storage")

@@ -30,7 +30,8 @@ mpl.rcParams.update({'font.sans-serif': 'Helvetica',
                      'font.size': 12})
 PLOT_AND_FIT_FILE = True
 fit_file = 1
-coincidence_xlim = (0, 50)
+# coincidence_xlim = (0, 50)
+coincidence_xlim = 50
 color_coincidence = 'cornflowerblue'
 color_car = 'coral'
 
@@ -73,6 +74,7 @@ input_power = measured_bs_power * power_ratio
 output_power = power_df['Output Power (uW)']
 total_efficiency = output_power / input_power
 on_chip_power = np.sqrt(total_efficiency) * input_power
+print(np.sqrt(total_efficiency))
 print(on_chip_power)
 
 # loop over files to extract coincidence power
@@ -106,13 +108,15 @@ for file_num in file_numbers:
                                                 T_2=T_2_guess)
         print(res_coincidence.fit_report())
 
+        time_coincidence -= res_coincidence.params['x0'].value
+
         fig, ax = plt.subplots(figsize=(4, 3), dpi=400)
         ax.plot(time_coincidence, coincidence, color=color_coincidence)
         ax.plot(time_coincidence, res_coincidence.best_fit,
                  color='k', ls='--')
-        ax.set_xlim(coincidence_xlim)
+        ax.set_xlim(-coincidence_xlim/2, coincidence_xlim/2)
         ax.set_xlabel('Timing Offset (ns)')
-        ax.set_ylabel('Counts')
+        ax.set_ylabel('Coincidence Counts (s$^{-1}$)')
         ax.set_title('Coincidence Histogram')
         fig.tight_layout()
         fig.show()

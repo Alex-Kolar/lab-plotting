@@ -104,6 +104,14 @@ plt.legend()
 plt.tight_layout()
 plt.show()
 
+# plot just coupled cavity with total frequency
+freq_absolute = freq + FREQ_START
+plt.plot(freq_absolute, transmission_no_ions/norm_factor_no_ions)
+plt.plot(freq_absolute, transmission/norm_factor)
+plt.axvline(194829.6)
+plt.tight_layout()
+plt.show()
+
 # print reports
 print(res_cavity.fit_report())
 print(res.fit_report())
@@ -118,3 +126,5 @@ kappa_err = res_cavity.params['sigma'].stderr
 coop = (4 * (coupling ** 2)) / (kappa * inhomog)
 coop_err = coop * np.sqrt((2*coupling_err/coupling)**2 + (inhomog_err/inhomog)**2 + (kappa_err/kappa)**2)
 print(f'Fitted cooperativity: {coop:.3f} +/- {coop_err:.3f}')
+
+print(f'Fitted center of cavity: {res.params["w_cav"].value+FREQ_START:.3f} GHz')
