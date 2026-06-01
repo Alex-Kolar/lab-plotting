@@ -4,6 +4,8 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
+from time_resolved_storage_helpers import sort_func
+
 
 DATA_DIR = ('/Users/alexkolar/Library/CloudStorage/Box-Box/Zhonglab/Lab data/Ring Resonators'
             '/Mounted_device_mk_5/10mK/2026_04_07/afc_longterm/2D')
@@ -19,13 +21,6 @@ cmap = 'magma'
 signal_idler_offset_guess = 453
 idler_lim_input = (400, 1200)
 
-
-def sort_func(filename):
-    file_parts = filename.split('_')
-    try:
-        return int(file_parts[-1].split('.')[0])
-    except ValueError:
-        return 0
 
 all_files = glob.glob(os.path.join(DATA_DIR, '*.npz'))
 all_files.sort(key=sort_func)
@@ -163,16 +158,23 @@ plt.tight_layout()
 plt.show()
 
 
+# plot input and echo counts coincidence histogram
+# echo is shifted by 1 us to coincide with input
 input_idx = np.where(np.logical_and(time_arr > (signal_idler_offset_guess*0.5)-20,
                                     time_arr < (signal_idler_offset_guess*0.5)+20))[0]
 echo_idx = input_idx + 2000
+
+input_center = time_arr[np.argmax(diag_sum)]
+expected_center_echo = input_center + 1e3 + 4  # 4 ns difference fit from weak coherent input
 
 fig, ax = plt.subplots()
 ax_r = ax.twinx()
 ax.plot(time_arr[input_idx], diag_sum[input_idx],
         color='cornflowerblue')
+ax.axvline(input_center, color='cornflowerblue', ls=':')
 ax_r.plot(time_arr[input_idx], diag_sum[echo_idx],
           color='coral')
+ax_r.axvline(expected_center_echo-1e3, color='coral', ls=':')
 ax.set_ylabel('Input Counts')
 ax_r.set_ylabel('Echo Counts')
 ax.set_xlabel('Signal - Idler Coincidence Delay (ns)')

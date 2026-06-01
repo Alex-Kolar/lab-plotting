@@ -19,7 +19,7 @@ cmap = 'magma'
 signal_idler_offset = 453  # all for 500 ps bins
 storage_time = 2000
 idler_lim_input = (300, 1400)
-scaling_factor = 20  # number of (500 ps) bins to include
+scaling_factor = 10  # number of (500 ps) bins to include
 
 
 def sort_func(filename):
