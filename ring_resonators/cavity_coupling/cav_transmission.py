@@ -37,6 +37,34 @@ def R_mod(w, w_cav, w_ions, kappa, kappa_in, coupling, inhomog, a):
     return a * (np.abs(t) ** 2)
 
 
+def R_mod_lmfit(x, w_cav, w_ions, kappa, kappa_in, coupling, inhomog, a):
+    ion_term = (coupling ** 2) / (x - w_ions + 1j * inhomog / 2)
+    t = 1 - (1j*kappa_in)/(x - w_cav + 1j * kappa / 2 - ion_term)
+    return a * (np.abs(t) ** 2)
+
+
+"""Adding different versions for different ion distributions"""
+def W_lorentzian(x, w_ions, coupling, inhomog):
+    return (coupling ** 2) / (x - w_ions + 1j*inhomog/2)
+
+def W_gaussian(x, w_ions, coupling, inhomog):
+    log2 = np.log(2)
+    interior_term = (x - w_ions) / inhomog * np.sqrt(log2)
+    return (-1j * np.sqrt(np.pi * log2) * np.square(coupling) / inhomog) * \
+        np.exp(-np.square(interior_term)) * \
+        scipy.special.erfc(-1j * interior_term)
+
+def R_mod_lmfit_lorentzian(x, w_cav, w_ions, kappa, kappa_in, coupling, inhomog, a):
+    ion_term = W_lorentzian(x, w_ions, coupling, inhomog)
+    t = 1 - (1j*kappa_in)/(x - w_cav + 1j * kappa / 2 - ion_term)
+    return a * (np.abs(t) ** 2)
+
+def R_mod_lmfit_gaussian(x, w_cav, w_ions, kappa, kappa_in, coupling, inhomog, a):
+    ion_term = W_gaussian(x, w_ions, coupling, inhomog)
+    t = 1 - (1j*kappa_in)/(x - w_cav + 1j * kappa / 2 - ion_term)
+    return a * (np.abs(t) ** 2)
+
+
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
@@ -46,26 +74,27 @@ if __name__ == '__main__':
     w_ion = 0
 
     # cavity parameters
-    kappa = 0.405  # unit: GHz
+    kappa = 0.396  # unit: GHz
     kappa_in = kappa / 2
 
     # coupling parameters
-    coupling = 0.07  # unit: GHz
-    inhomogeneous = 0.1  # unit: GHz
+    # coupling = 0.266  # unit: GHz
+    coupling = 0.2
+    inhomogeneous = 0.384  # unit: GHz
     # gamma = 0
 
     # fitting parameters
     a = 1
-    b = 0
+    b = 1
     phi = 0
 
     # plotting
-    # transmission = T_no_gamma(w, w_cav, w_ion, kappa, delta, omega, a, b, phi)
-    # reflection = R_no_gamma(w, w_cav, w_ion, kappa, delta, omega, a, b, phi)
-    # transmission_no_ions = T_no_gamma(w, w_cav, w_ion, kappa, delta, 0, a, b, phi)
-    # reflection_no_ions = R_no_gamma(w, w_cav, w_ion, kappa, delta, 0, a, b, phi)
-    reflection = R_mod(w, w_cav, w_ion, kappa, kappa_in, coupling, inhomogeneous, a)
-    reflection_no_ions = R_mod(w, w_cav, w_ion, kappa, kappa_in, 0, inhomogeneous, a)
+    # transmission = T_no_gamma(w, w_cav, w_ion, kappa, inhomogeneous, coupling, a, b, phi)
+    # reflection = R_no_gamma(w, w_cav, w_ion, kappa, inhomogeneous, coupling, a, b, phi)
+    # transmission_no_ions = T_no_gamma(w, w_cav, w_ion, kappa, inhomogeneous, 0, a, b, phi)
+    # reflection_no_ions = R_no_gamma(w, w_cav, w_ion, kappa, inhomogeneous, 0, a, b, phi)
+    reflection = R_mod_lmfit_gaussian(w, w_cav, w_ion, kappa, kappa_in, coupling, inhomogeneous, a)
+    reflection_no_ions = R_mod_lmfit_lorentzian(w, w_cav, w_ion, kappa, kappa_in, 0, inhomogeneous, a)
 
     plt.plot(w, reflection_no_ions,
              label='Cavity Reflection')
@@ -76,3 +105,13 @@ if __name__ == '__main__':
     plt.legend()
     plt.tight_layout()
     plt.show()
+
+    # plt.plot(w, transmission_no_ions,
+    #          label='Cavity Reflection')
+    # plt.plot(w, transmission,
+    #          label='Cavity Reflection with Ions')
+    # plt.xlabel('Cavity Detuning (GHz)')
+    # plt.ylabel('Reflection')
+    # plt.legend()
+    # plt.tight_layout()
+    # plt.show()
