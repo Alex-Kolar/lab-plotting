@@ -165,6 +165,8 @@ echo_idx = np.where((bins >= xlim_echo[0]) & (bins <= xlim_echo[1]))[0]
 bins_echo = bins[echo_idx]
 echo_constructive_no_bg = all_hist_constructive[echo_idx] - all_hist_constructive[bg_idx]
 echo_destructive_no_bg = all_hist_destructive[echo_idx] - all_hist_destructive[bg_idx]
+echo_constructive_bg = all_hist_constructive[echo_idx]
+echo_destructive_bg = all_hist_destructive[echo_idx]
 
 # calculate visibility
 window_idx = np.where((bins_echo >= window_range[0]) & (bins_echo <= window_range[1]))[0]
@@ -177,6 +179,12 @@ visibility = (constructive_counts - destructive_counts) / (constructive_counts +
 print('Constructive counts (no bg):', constructive_counts)
 print('Destructive counts (no bg):', destructive_counts)
 print(f'Visibility: {visibility*100:.2f}%')
+constructive_counts_bg = np.sum(echo_constructive_bg[window_idx], axis=0)
+destructive_counts_bg = np.sum(echo_destructive_bg[window_idx], axis=0)
+visibility_bg = (constructive_counts_bg - destructive_counts_bg) / (constructive_counts_bg + destructive_counts_bg)
+print('Constructive counts (bg):', constructive_counts_bg)
+print('Destructive counts (bg):', destructive_counts_bg)
+print(f'Visibility (bg): {visibility_bg*100:.2f}%')
 
 # calculate noise
 noise_idx_1 = np.where((bins_echo >= bg_noise_range_1[0]) & (bins_echo <= bg_noise_range_1[1]))[0]
